@@ -86,7 +86,6 @@ export default function DashboardPage() {
       <div className="top-bar">
         <div>
           <h1>Principales Indicadores Económicos</h1>
-          <p className="subtitle">Resumen del tablero migrado de Power BI.</p>
         </div>
       </div>
 

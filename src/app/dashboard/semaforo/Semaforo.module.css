@@ -1,0 +1,146 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: auto;
+}
+
+.header {
+  padding-bottom: 7px;
+  border-bottom: 2px solid #cbd5e1;
+}
+
+.titleGroup h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.titleGroup p {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.controlsBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.toggleBtn {
+  background-color: #14203b;
+  color: #ffffff;
+  border: 1px solid #1e2d4a;
+  padding: 9px 19px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggleBtn:hover {
+  background-color: #29395a;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 14px;
+  background-color: #e2e8f0;
+  color: #1e293b;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* LA TABLA ES LA ÚNICA QUE MANTIENE EL SCROLL INTERNO */
+.tableWrapper {
+  
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+  max-height: 600px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  background-color: #14203b;
+  color: #ffffff;
+  padding: 10px 6px;
+  font-weight: 600;
+  font-size: 0.74rem;
+  border-right: 1px solid #2d3748;
+  z-index: 10;
+}
+
+.table tbody td {
+  padding: 8px 6px;
+  border: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.fixedCol {
+  font-weight: 600;
+  color: #334155;
+  background-color: #f8fafc !important;
+}
+
+
+
+
+.redDark {
+  background-color: #fb7185 !important;
+  color: #0f172a !important;
+  font-weight: 600;
+}
+
+.redLight {
+  background-color: #f8a2ac !important;
+  color: #0f172a !important;
+  font-weight: 600;
+}
+
+.yellowLight {
+  background-color: #fcefba !important;
+  color: #0f172a !important;
+  font-weight: 600;
+}
+
+.yellowDark {
+  background-color: #fce89a !important;
+  color: #0f172a !important;
+  font-weight: 600;
+}
+
+.greenLight {
+  background-color: #72f89fd2 !important;
+  color: #0f172a !important;
+  font-weight: 600;
+}
+
+.greenDark {
+  background-color: #21d35cbe !important;
+  color: #0f172a !important;
+  font-weight: 600;
+}
+
+.colorNeutral {
+  background-color: #ffffff !important;
+  color: #94a3b8 !important;
+}
