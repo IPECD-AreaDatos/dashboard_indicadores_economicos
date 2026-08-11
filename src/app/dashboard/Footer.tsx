@@ -10,7 +10,7 @@ export default function Footer() {
           <Image 
             src="/images/logo_color.png" 
             alt="Instituto de Modernización e Innovación CORRIENTES"
-            width={280} // Ajustá este ancho visual según cómo se vea (es horizontal largo)
+            width={240} // Ajustá este ancho visual según cómo se vea (es horizontal largo)
             height={70} // Ajustá el alto proporcionalmente
             className="footer-logo-img"
           />
@@ -18,7 +18,7 @@ export default function Footer() {
         
         {/* Texto institucional centralizado */}
         <p className="footer-text">
-          © 2026 - Gobierno de la Provincia de Corrientes — Instituto Provincial de Estadística y Ciencia de Datos / IMI
+          © 2026 - Gobierno de la Provincia de Corrientes - IMI
         </p>
       </div>
     </footer>

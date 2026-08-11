@@ -34,7 +34,18 @@ button {
   padding: 24px 16px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+  min-height: 100vh;
+  width: 270px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-brand {
@@ -56,27 +67,90 @@ button {
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.nav-group-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin: 0 0 8px 10px;
+  text-transform: uppercase;
+}
+
+.nav-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .sidebar-link {
   display: flex;
   align-items: center;
-  gap: 12px;
-  border: none;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-  padding: 12px 14px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: background 0.2s ease;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: #cbd5e1;
   text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
-.sidebar-link:hover,
+.sidebar-link-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-link-icon {
+  width: 18px;
+  height: 18px;
+  color: #94a3b8;
+  transition: color 0.2s ease;
+}
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.sidebar-link:hover .sidebar-link-icon {
+  color: #38bdf8;
+}
+
 .sidebar-link.active {
-  background: rgba(255, 255, 255, 0.08);
+  background: #1e2d4a;
+  color: #ffffff;
+  font-weight: 600;
+  border-left: 3px solid #10b981; /* Marca verde esmeralda institucional */
+}
+
+.sidebar-link.active .sidebar-link-icon {
+  color: #10b981;
+}
+
+.sidebar-link-arrow {
+  width: 16px;
+  height: 16px;
+  color: #10b981;
+}
+
+.sidebar-footer {
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.sidebar-footer-sub {
+  margin-top: 2px;
+  font-size: 0.7rem;
+  color: #475569;
 }
 
 .main-content {
@@ -266,7 +340,7 @@ button {
 .sidebar-logo-container {
   display: flex;
   justify-content: center; /* Centrado horizontal */
-  margin-bottom: 20px; /* Espacio antes del título */
+  margin-bottom: 23px; /* Espacio antes del título */
 }
 
 /* La imagen del logo en el sidebar (blanca) */
@@ -282,24 +356,23 @@ button {
 /* Títulos del sidebar específicos */
 .sidebar-title {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  color: #f8fafc; /* Blanco para el título */
+  color: #ffffff;
 }
 
 .sidebar-subtitle {
-  margin: 4px 0 0;
-  font-size: 0.85rem;
-  color: #94a3b8; /* Gris azulado suave para el subtítulo */
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: #94a3b8;
 }
-
 
 /* Estilos del Footer Global (fuera del sidebar, al fondo del dashboard) */
 .app-footer {
   /* Si tu grid principal (main-shell) tiene 2 columnas, el footer debe ocupar la segunda columna */
   grid-column: 2 / -1; 
   background: #ffffff; /* Fondo blanco */
-  padding: 40px 32px; /* Más padding para que respire */
+  padding: 30px 32px; /* Más padding para que respire */
   border-top: 1px solid rgba(15, 23, 42, 0.08); /* Línea sutil superior */
   margin-top: auto; /* Empuja el footer al fondo si hay poco contenido */
 }
@@ -311,7 +384,7 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center; /* Centrado horizontal de hijos */
-  gap: 30px; /* Espacio entre logos y texto */
+  gap: 15px; /* Espacio entre logos y texto */
 }
 
 /* Contenedor de los logos en el footer */

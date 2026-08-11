@@ -1,71 +1,117 @@
-// src/app/Sidebar.tsx
 'use client';
 
 import Image from 'next/image';
-import { BarChart3, Building, Users, Briefcase, Home } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { // Corregido: LayoutDashboard no existe, se reemplaza por LayoutGrid
+  LayoutGrid,
+  TrendingUp,
+  Briefcase,
+  Users,
+  DollarSign,
+  Factory,
+  Building2,
+  PieChart,
+  ChevronRightIcon,
+  GaugeCircle, // Reemplazamos TrafficLight por GaugeCircle
+} from 'lucide-react';
 
-const menuItems = [
+interface MenuItem {
+  name: string;
+  href: string;
+  icon: React.ElementType;
+}
+
+interface MenuGroup {
+  category: string;
+  items: MenuItem[];
+}
+
+const menuGroups: MenuGroup[] = [
   {
     category: 'GENERAL',
     items: [
-      { name: 'Resumen', icon: Home, href: '/dashboard', active: true },
-      { name: 'Semáforo', icon: BarChart3, href: '#' },
+      { name: 'Resumen Principal', href: '/dashboard', icon: LayoutGrid },
+      { name: 'Semáforo de Indicadores', href: '/dashboard/semaforo', icon: GaugeCircle },
     ],
   },
   {
-    category: 'MACROECONOMÍA',
+    category: 'MACROECONOMÍA Y PRECIOS',
     items: [
-      { name: 'Precios', icon: BarChart3, href: '#' },
-      { name: 'Actividad Económica', icon: Building, href: '#' },
-      { name: 'Empleo', icon: Users, href: '#' },
-      { name: 'Salarios', icon: Briefcase, href: '#' },
+      { name: 'Precios (IPC)', href: '/dashboard/ipc', icon: TrendingUp },
+      { name: 'Indicadores País', href: '/dashboard/indicadores-pais', icon: DollarSign },
     ],
   },
   {
-    category: 'SECTOR PRODUCTIVO',
+    category: 'EMPLEO Y SALARIOS',
     items: [
-      { name: 'Industria', icon: Building, href: '#' },
-      { name: 'Construcción', icon: Building, href: '#' },
-      // ... agregar más items aquí
+      { name: 'Empleo Nacional (SIPA)', href: '/dashboard/empleo-nacional', icon: Users },
+      { name: 'Empleo Provincial y NEA', href: '/dashboard/empleo-provincial', icon: Briefcase },
     ],
   },
-]
+  {
+    category: 'SECTOR PRODUCTIVO Y ACTIVIDAD',
+    items: [
+      { name: 'Industria y Actividad', href: '/dashboard/industria', icon: Factory },
+      { name: 'Producto Bruto (PBG)', href: '/dashboard/pbg', icon: PieChart },
+      { name: 'Construcción (IERIC)', href: '/dashboard/construccion', icon: Building2 },
+    ],
+  },
+];
 
 export default function Sidebar() {
+  const pathname = usePathname();
+
   return (
     <aside className="sidebar">
+      {/* Header del Sidebar */}
       <div className="sidebar-header">
-        {/* Logo IMI Pluma Blanca centrado arriba (resalta en fondo oscuro) */}
         <div className="sidebar-logo-container">
-          <Image 
-            src="/images/logo_pluma_blanca.png" 
-            alt="Logo IMI Indicadores Económicos"
-            width={120} // Ajustá el ancho visual (más grande que los placeholders)
-            height={60} // Ajustá el alto proporcional
+          <Image
+            src="/images/logo_pluma_blanca.png"
+            alt="Logo IPECD Corrientes"
+            width={200}
+            height={60}
+            priority
             className="sidebar-logo-img"
           />
         </div>
-
-        {/* Títulos alineados centralmente como en la referencia */}
         <div className="sidebar-title-group">
           <h2 className="sidebar-title">Indicadores Económicos</h2>
-          <p className="sidebar-subtitle">IMI • Provincia de Corrientes</p>
+          <p className="sidebar-subtitle">Provincia de Corrientes</p>
         </div>
       </div>
-      
+
+      {/* Navegación por Categorías */}
       <nav className="sidebar-nav">
-        {menuItems.map((group) => (
+        {menuGroups.map((group) => (
           <div key={group.category} className="nav-group">
             <h3 className="nav-group-title">{group.category}</h3>
-            {group.items.map((item) => (
-              <a key={item.name} href={item.href} className={`nav-item ${item.active ? 'active' : ''}`}>
-                <item.icon className="nav-item-icon" />
-                <span>{item.name}</span>
-              </a>
-            ))}
+            <div className="nav-group-items">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`sidebar-link ${isActive ? 'active' : ''}`}
+                  >
+                    <div className="sidebar-link-content">
+                      <Icon className="sidebar-link-icon" />
+                      <span>{item.name}</span>
+                    </div>
+                    {isActive && <ChevronRightIcon className="sidebar-link-arrow" />}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         ))}
       </nav>
+
+      
     </aside>
-  )
+  );
 }

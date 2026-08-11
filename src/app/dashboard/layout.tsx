@@ -1,5 +1,4 @@
 import Sidebar from './Sidebar'
-import HeaderInstitucional from './HeaderInstitucional'
 import Footer from './Footer'
 
 export default function RootLayout({
@@ -9,7 +8,6 @@ export default function RootLayout({
 }>) {
   return (
     <>
-      <HeaderInstitucional />
       <div className="main-shell">
         <Sidebar />
         <main className="main-content">
