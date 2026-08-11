@@ -101,15 +101,141 @@ button {
   color: #475569;
 }
 
-.page-card {
-  border-radius: 24px;
-  background: #ffffff;
-  padding: 28px;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
 }
 
-.page-card h2 {
-  margin-top: 0;
+.summary-card {
+  border-radius: 24px;
+  background: #ffffff;
+  padding: 24px;
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.summary-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.summary-card-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #101827;
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+}
+
+.pill-group {
+  display: flex;
+  gap: 10px;
+}
+
+.pill {
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #f8fafc;
+  color: #334155;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.pill.active {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+.summary-row:first-child {
+  border-top: none;
+}
+
+.row-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  background: #0f172a;
+  font-size: 0.8rem;
+  margin-right: 14px;
+}
+
+.row-title {
+  font-weight: 700;
+}
+
+.row-note {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.row-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, auto));
+  gap: 12px;
+  align-items: center;
+}
+
+.row-stats div {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+
+.row-stats strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.row-stats span {
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.icon-button {
+  border: none;
+  background: #ecfdf5;
+  color: #166534;
+  border-radius: 999px;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.summary-action {
+  border: none;
+  background: #0f172a;
+  color: #ffffff;
+  padding: 12px 22px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+@media (max-width: 1200px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 900px) {
@@ -131,4 +257,80 @@ button {
   .sidebar-link {
     white-space: nowrap;
   }
+}
+
+
+/* NUEVOS ESTILOS PARA INTEGRACIÓN DE LOGOS Y FOOTER GLOBAL */
+
+/* Contenedor del logo en la parte superior del sidebar */
+.sidebar-logo-container {
+  display: flex;
+  justify-content: center; /* Centrado horizontal */
+  margin-bottom: 20px; /* Espacio antes del título */
+}
+
+/* La imagen del logo en el sidebar (blanca) */
+.sidebar-logo-img {
+  object-fit: contain; /* Asegura que no se deforme */
+}
+
+/* Grupo de títulos del sidebar alineados centralmente */
+.sidebar-title-group {
+  text-align: center;
+}
+
+/* Títulos del sidebar específicos */
+.sidebar-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f8fafc; /* Blanco para el título */
+}
+
+.sidebar-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: #94a3b8; /* Gris azulado suave para el subtítulo */
+}
+
+
+/* Estilos del Footer Global (fuera del sidebar, al fondo del dashboard) */
+.app-footer {
+  /* Si tu grid principal (main-shell) tiene 2 columnas, el footer debe ocupar la segunda columna */
+  grid-column: 2 / -1; 
+  background: #ffffff; /* Fondo blanco */
+  padding: 40px 32px; /* Más padding para que respire */
+  border-top: 1px solid rgba(15, 23, 42, 0.08); /* Línea sutil superior */
+  margin-top: auto; /* Empuja el footer al fondo si hay poco contenido */
+}
+
+/* Contenedor de contenido del footer para centrado y disposición */
+.footer-content {
+  max-width: 1200px; /* Ancho máximo para contenido */
+  margin: 0 auto; /* Centrado horizontal */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centrado horizontal de hijos */
+  gap: 30px; /* Espacio entre logos y texto */
+}
+
+/* Contenedor de los logos en el footer */
+.footer-logos {
+  display: flex;
+  justify-content: center; /* Centrado horizontal de logos */
+  align-items: center; /* Alineado vertical central */
+}
+
+/* La imagen de logo en el footer (a color) */
+.footer-logo-img {
+  object-fit: contain;
+}
+
+/* Texto del footer centrado */
+.footer-text {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+  text-align: center;
+  line-height: 1.5; /* Mejor legibilidad */
 }
