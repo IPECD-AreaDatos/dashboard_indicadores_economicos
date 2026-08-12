@@ -1,0 +1,212 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px; /* Mayor separación entre secciones */
+  max-width: 1450px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #cbd5e1;
+  margin-bottom: 8px; /* Espaciado extra con el contenido de abajo */
+}
+
+.titleGroup h1 {
+  margin: 0;
+  font-size: 1.7rem; /* Título principal más visible */
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.titleGroup p {
+  margin: 8px 0 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.topFilters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.selectFilter {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+}
+
+/* GRID PRINCIPAL */
+.mainGrid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+.chartCard {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 28px; /* Más padding interno */
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 24px; /* Más espacio entre el header interno y el gráfico */
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.badgeCategory {
+  background-color: #d1fae5;
+  color: #065f46;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.metricSelectors {
+  display: flex;
+  gap: 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.radioOption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.yearFilter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #14203b;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.yearBtn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.yearBtnActive {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.chartScrollArea {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+/* ALTO DEL CANVAS AUMENTADO */
+.chartCanvas {
+  min-width: 850px;
+  height: 400px; /* Subió de 380px a 460px para mayor soltura */
+}
+
+/* COLUMNA KPIS */
+.kpiColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dateDisplay {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #15803d;
+}
+
+.kpiCard {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 22px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+}
+
+.kpiHeader {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1e2d4a;
+  margin-bottom: 14px;
+}
+
+.kpiMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  text-align: center;
+}
+
+.kpiVal {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.kpiLabel {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.switchModeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #14203b;
+  color: #ffffff;
+  border: none;
+  padding: 14px 22px;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+}
+
+.switchModeBtn:hover {
+  background-color: #1e2d4a;
+}
+
+.footerNote {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 8px;
+}
