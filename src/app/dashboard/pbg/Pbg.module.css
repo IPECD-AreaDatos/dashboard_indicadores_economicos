@@ -1,0 +1,224 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1450px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid #cbd5e1;
+}
+
+.titleGroup h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.titleGroup p {
+  margin: 3px 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.topControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.freqSelector {
+  display: flex;
+  background-color: #14203b;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.freqBtn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 6px 16px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.freqBtnActive {
+  background: #10b981;
+  color: #ffffff;
+}
+
+/* GRID PRINCIPAL */
+.mainGrid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+.chartCard {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 26px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.badgeCategory {
+  background-color: #d1fae5;
+  color: #065f46;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.chartCanvas {
+  width: 100%;
+  height: 420px;
+}
+
+/* COLUMNA KPIS DERECHA */
+.kpiColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.dateDisplay {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #15803d;
+}
+
+.kpiCard {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 22px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+}
+
+.kpiMainVal {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 6px 0;
+}
+
+.kpiSubtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.navLinkBtn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #14203b;
+  color: #ffffff;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.navLinkBtn:hover {
+  background-color: #1e2d4a;
+  transform: translateY(-1px);
+}
+
+/* SECCIÓN DESGLOSE POR ACTIVIDADES */
+.desgloseSection {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.desgloseHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.desgloseTitle {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  background-color: #14203b;
+  color: #ffffff;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.footerNote {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+@media (max-width: 1024px) {
+  .mainGrid {
+    grid-template-columns: 1fr;
+  }
+}
