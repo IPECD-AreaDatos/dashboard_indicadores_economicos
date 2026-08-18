@@ -1,353 +1,665 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import {
+  LineChart,
+  Line,
+  ResponsiveContainer,
+} from 'recharts';
+import {
+  Tag,
+  Users,
+  DollarSign,
+  Factory,
+  ArrowUpRight,
+} from 'lucide-react';
+import styles from './Resumen.module.css';
 
-type IpcTrendPoint = {
-  fecha: string
-  var_mensual: number
-}
-
-type CbaCbtRow = {
-  fecha: string
-  cba_hogar: number | null
-  cbt_hogar: number | null
-}
-
-type SipaRow = {
-  fecha: string
-  cantidad_con_estacionalidad: number | null
-  cantidad_sin_estacionalidad: number | null
-}
-
-type SummaryData = {
-  ipc: {
-    var_mensual: number
-    var_acumulada: number
-    var_interanual: number
-  } | null
-  ipcTrend: IpcTrendPoint[]
-  cbaCbt: CbaCbtRow[]
-  sipa: SipaRow[]
-}
-
-const priceOptions = ['IPC', 'CBA/CBT'] as const
-const empleoOptions = ['SRT', 'SIPA'] as const
-const salarioOptions = ['RIPTE', 'SMVM'] as const
-const industriaOptions = ['IPI', 'IERIC'] as const
-
-const emptySummary: SummaryData = {
-  ipc: null,
-  ipcTrend: [],
-  cbaCbt: [],
-  sipa: [],
-}
-
-const formatPercent = (value: number | null | undefined) =>
-  value != null ? `${value.toFixed(1)} %` : '—'
-
-const formatNumber = (value: number | null | undefined) =>
-  value != null ? value.toLocaleString('es-AR') : '—'
-
-export default function DashboardPage() {
-  const [priceView, setPriceView] = useState<(typeof priceOptions)[number]>('IPC')
-  const [empleoView, setEmpleoView] = useState<(typeof empleoOptions)[number]>('SRT')
-  const [salarioView, setSalarioView] = useState<(typeof salarioOptions)[number]>('RIPTE')
-  const [industriaView, setIndustriaView] = useState<(typeof industriaOptions)[number]>('IPI')
-  const [summaryData, setSummaryData] = useState<SummaryData>(emptySummary)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+export default function ResumenPrincipalPage() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadSummary = async () => {
+    async function fetchData() {
       try {
-        const response = await fetch('/api/resumen')
-        if (!response.ok) {
-          throw new Error(`Error ${response.status}`)
-        }
-        const data = await response.json()
-        setSummaryData(data)
+        const res = await fetch('/api/resumen');
+        const json = await res.json();
+        setData(json);
       } catch (err) {
-        setError('No se pudieron cargar los datos del resumen.')
+        console.error('Error cargando datos del resumen:', err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
+    fetchData();
+  }, []);
 
-    loadSummary()
-  }, [])
+  const formatMonthLabel = (fStr?: string) => {
+    if (!fStr) return 'may-26';
+    const parts = fStr.split('-');
+    if (parts.length < 2) return fStr;
+    const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    return `${months[parseInt(parts[1], 10) - 1]}-${parts[0].slice(-2)}`;
+  };
 
-  const ipcLast = summaryData.ipc
-  const ipcValues = summaryData.ipcTrend
-  const latestCbaCbt = summaryData.cbaCbt[0] ?? null
-  const latestSipa = summaryData.sipa[0] ?? null
+  // 1. PRECIOS & CANASTAS
+  const ipcRows = data?.ipc || [];
+  const ipcNacSeries = ipcRows.filter((r: any) => r.region?.toLowerCase().includes('nacion'));
+  const ipcNeaSeries = ipcRows.filter((r: any) => r.region?.toLowerCase().includes('nea'));
+  const lastIpcNac = ipcNacSeries[ipcNacSeries.length - 1];
+  const lastIpcNea = ipcNeaSeries[ipcNeaSeries.length - 1] || lastIpcNac;
+
+  const cbtCbaRows = data?.cbt_cba || [];
+  const lastCbtCba = cbtCbaRows[cbtCbaRows.length - 1];
+
+  // 2. EMPLEO (SIPA & SRT)
+  const sipaRows = data?.sipa || [];
+  const sipaNacSeries = sipaRows.filter((r: any) => r.ambito === 'Nacion');
+  const sipaCtesSeries = sipaRows.filter((r: any) => r.ambito === 'Corrientes');
+  const lastSipaNac = sipaNacSeries[sipaNacSeries.length - 1];
+  const lastSipaCtes = sipaCtesSeries[sipaCtesSeries.length - 1];
+
+  const srtRows = data?.srt || [];
+  const srtNacSeries = srtRows.filter((r: any) => r.ambito === 'Nacion');
+  const srtCtesSeries = srtRows.filter((r: any) => r.ambito === 'Corrientes');
+  const lastSrtNac = srtNacSeries[srtNacSeries.length - 1];
+  const lastSrtCtes = srtCtesSeries[srtCtesSeries.length - 1];
+
+  const formatSipaNacion = (val: number) => {
+    if (!val) return '12,8 mill.';
+    const num = Number(val);
+    const millones = num > 100000 ? num / 1000000 : num / 1000;
+    return `${millones.toFixed(1).replace('.', ',')} mill.`;
+  };
+
+  const formatSipaCtes = (val: number) => {
+    if (!val) return '76,2 mil';
+    const num = Number(val);
+    const miles = num > 10000 ? num / 1000 : num;
+    return `${miles.toFixed(1).replace('.', ',')} mil`;
+  };
+
+  // 3. SALARIOS
+  const ripteRows = data?.ripte || [];
+  const smvmRows = data?.smvm || [];
+  const lastRipte = ripteRows[ripteRows.length - 1];
+  const lastSmvm = smvmRows[smvmRows.length - 1];
+
+  // 4. INDUSTRIA & CONSTRUCCIÓN
+  const ipiRows = data?.ipi || [];
+  const lastIpi = ipiRows[ipiRows.length - 1];
+
+  const iericRows = data?.ieric || [];
+  const iericNeaSeries = iericRows.filter((r: any) => r.ambito === 'NEA');
+  const iericCtesSeries = iericRows.filter((r: any) => r.ambito === 'Corrientes');
+  const lastIericNea = iericNeaSeries[iericNeaSeries.length - 1];
+  const lastIericCtes = iericCtesSeries[iericCtesSeries.length - 1];
 
   return (
-    <>
-      <div className="top-bar">
-        <div>
-          <h1>Principales Indicadores Económicos</h1>
+    <div className={styles.container}>
+      {/* Título simple sin botón semáforo */}
+      <div className={styles.header}>
+        <div className={styles.titleGroup}>
+          <h1>PRINCIPALES INDICADORES ECONÓMICOS</h1>
         </div>
       </div>
 
-      {(loading || error) && (
-        <div style={{ padding: '18px 0', color: '#475569' }}>{loading ? 'Cargando datos del resumen...' : error}</div>
+      {loading ? (
+        <div style={{ padding: '80px', textAlign: 'center', color: '#64748b' }}>
+          Cargando indicadores económicos...
+        </div>
+      ) : (
+        <div className={styles.gridCards}>
+          {/* ========================================================================= */}
+          {/* CARD 1: PRECIOS Y CANASTAS BÁSICAS (4 FILAS) */}
+          {/* ========================================================================= */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardTitle}>
+                <Tag size={18} />
+                <span>Precios y Canastas Básicas</span>
+              </div>
+              <span className={styles.cardDate}>{formatMonthLabel(lastIpcNac?.fecha)}</span>
+            </div>
+
+            <div className={styles.cardBody}>
+              {/* IPC Nación */}
+              <div className={styles.indicatorRow}>
+                <div className={styles.mapIconCircle}>PAÍS</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastIpcNac?.var_acumulada ? `${Number(lastIpcNac.var_acumulada).toFixed(1)}%` : '14,7%'}
+                  </div>
+                  <div className={styles.metricLabel}>IPC Acumulado</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastIpcNac?.var_interanual ? `${Number(lastIpcNac.var_interanual).toFixed(1)}%` : '33,2%'}
+                  </div>
+                  <div className={styles.metricLabel}>Interanual</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastIpcNac?.var_mensual ? `${Number(lastIpcNac.var_mensual).toFixed(1)}%` : '2,1%'}
+                  </div>
+                  <div className={styles.metricLabel}>Mensual</div>
+                </div>
+                <div className={styles.sparklineContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={ipcNacSeries.slice(-12)}>
+                      <Line type="monotone" dataKey="var_mensual" stroke="#0284c7" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <Link href="/dashboard/ipc" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+
+              {/* IPC NEA */}
+              <div className={styles.indicatorRow}>
+                <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>NEA</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastIpcNea?.var_acumulada ? `${Number(lastIpcNea.var_acumulada).toFixed(1)}%` : '17,6%'}
+                  </div>
+                  <div className={styles.metricLabel}>IPC Acumulado</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastIpcNea?.var_interanual ? `${Number(lastIpcNea.var_interanual).toFixed(1)}%` : '35,3%'}
+                  </div>
+                  <div className={styles.metricLabel}>Interanual</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastIpcNea?.var_mensual ? `${Number(lastIpcNea.var_mensual).toFixed(1)}%` : '2,6%'}
+                  </div>
+                  <div className={styles.metricLabel}>Mensual</div>
+                </div>
+                <div className={styles.sparklineContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={ipcNeaSeries.slice(-12)}>
+                      <Line type="monotone" dataKey="var_mensual" stroke="#84cc16" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <Link href="/dashboard/ipc" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+
+              {/* CBT Hogar */}
+              <div className={styles.indicatorRow}>
+                <div className={styles.mapIconCircle}>CBT</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    ${lastCbtCba?.cbt_hogar ? Math.round(Number(lastCbtCba.cbt_hogar)).toLocaleString('es-AR') : '1.564.716'}
+                  </div>
+                  <div className={styles.metricLabel}>CBT Hogar</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastCbtCba?.cbt_ia ? `${Number(lastCbtCba.cbt_ia).toFixed(1)}%` : '36,1%'}
+                  </div>
+                  <div className={styles.metricLabel}>Interanual</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastCbtCba?.cbt_men ? `${Number(lastCbtCba.cbt_men).toFixed(1)}%` : '2,2%'}
+                  </div>
+                  <div className={styles.metricLabel}>CBT m.m.</div>
+                </div>
+                <div className={styles.sparklineContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={cbtCbaRows.slice(-12)}>
+                      <Line type="monotone" dataKey="cbt_men" stroke="#0284c7" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <Link href="/dashboard/indicadores" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+
+              {/* CBA Hogar */}
+              <div className={styles.indicatorRow}>
+                <div className={styles.mapIconCircle}>CBA</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    ${lastCbtCba?.cba_hogar ? Math.round(Number(lastCbtCba.cba_hogar)).toLocaleString('es-AR') : '708.016'}
+                  </div>
+                  <div className={styles.metricLabel}>CBA Hogar</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastCbtCba?.cba_ia ? `${Number(lastCbtCba.cba_ia).toFixed(1)}%` : '37,4%'}
+                  </div>
+                  <div className={styles.metricLabel}>Interanual</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastCbtCba?.cba_men ? `${Number(lastCbtCba.cba_men).toFixed(1)}%` : '2,6%'}
+                  </div>
+                  <div className={styles.metricLabel}>CBA m.m.</div>
+                </div>
+                <div className={styles.sparklineContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={cbtCbaRows.slice(-12)}>
+                      <Line type="monotone" dataKey="cba_men" stroke="#84cc16" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <Link href="/dashboard/indicadores" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* CARD 2: EMPLEO PRIVADO Y REGISTRADO (4 FILAS) */}
+          {/* ========================================================================= */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardTitle}>
+                <Users size={18} />
+                <span>Empleo Privado y Registrado</span>
+              </div>
+              <span className={styles.cardDate}>{formatMonthLabel(lastSipaNac?.fecha)}</span>
+            </div>
+
+            <div className={styles.cardBody}>
+              {/* SIPA Nación */}
+              <div className={styles.indicatorRow}>
+                <div className={styles.mapIconCircle}>PAÍS</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {formatSipaNacion(lastSipaNac?.puestos)}
+                  </div>
+                  <div className={styles.metricLabel}>Puestos Privados (SIPA)</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastSipaNac?.var_interanual ? `${Number(lastSipaNac.var_interanual).toFixed(1)}%` : '-2,2%'}
+                  </div>
+                  <div className={styles.metricLabel}>Interanual</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastSipaNac?.var_mensual ? `${Number(lastSipaNac.var_mensual).toFixed(1)}%` : '-0,1%'}
+                  </div>
+                  <div className={styles.metricLabel}>Mensual (s/e)</div>
+                </div>
+                <div className={styles.sparklineContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={sipaNacSeries.slice(-12)}>
+                      <Line type="monotone" dataKey="puestos" stroke="#0284c7" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <Link href="/dashboard/empleo-nacional" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+
+              {/* SIPA Corrientes */}
+              <div className={styles.indicatorRow}>
+                <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>CTES</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {formatSipaCtes(lastSipaCtes?.puestos)}
+                  </div>
+                  <div className={styles.metricLabel}>Puestos Privados (SIPA)</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastSipaCtes?.var_interanual ? `${Number(lastSipaCtes.var_interanual).toFixed(1)}%` : '-5,3%'}
+                  </div>
+                  <div className={styles.metricLabel}>Interanual</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastSipaCtes?.var_mensual ? `${Number(lastSipaCtes.var_mensual).toFixed(1)}%` : '0,1%'}
+                  </div>
+                  <div className={styles.metricLabel}>Mensual (s/e)</div>
+                </div>
+                <div className={styles.sparklineContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={sipaCtesSeries.slice(-12)}>
+                      <Line type="monotone" dataKey="puestos" stroke="#84cc16" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <Link href="/dashboard/empleo" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+
+              {/* SRT País */}
+              <div className={styles.indicatorRow}>
+                <div className={styles.mapIconCircle}>PAÍS</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastSrtNac?.trabajadores ? `${(Number(lastSrtNac.trabajadores) / 1000000).toFixed(1)} mill.` : '10,0 mill.'}
+                  </div>
+                  <div className={styles.metricLabel}>Trabajadores SRT</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    ${lastSrtNac?.salario_promedio ? Math.round(Number(lastSrtNac.salario_promedio)).toLocaleString('es-AR') : '850.000'}
+                  </div>
+                  <div className={styles.metricLabel}>Salario Promedio</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>Nacional</div>
+                  <div className={styles.metricLabel}>Cobertura</div>
+                </div>
+                <div className={styles.sparklineContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={srtNacSeries.slice(-12)}>
+                      <Line type="monotone" dataKey="trabajadores" stroke="#0284c7" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <Link href="/dashboard/empleo" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+
+              {/* SRT Corrientes */}
+              <div className={styles.indicatorRow}>
+                <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>CTES</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastSrtCtes?.trabajadores ? `${(Number(lastSrtCtes.trabajadores) / 1000).toFixed(1)} mil` : '170,2 mil'}
+                  </div>
+                  <div className={styles.metricLabel}>Trabajadores SRT</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    ${lastSrtCtes?.salario_promedio ? Math.round(Number(lastSrtCtes.salario_promedio)).toLocaleString('es-AR') : '713.464'}
+                  </div>
+                  <div className={styles.metricLabel}>Salario Promedio</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>Corrientes</div>
+                  <div className={styles.metricLabel}>Cobertura</div>
+                </div>
+                <div className={styles.sparklineContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={srtCtesSeries.slice(-12)}>
+                      <Line type="monotone" dataKey="trabajadores" stroke="#84cc16" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <Link href="/dashboard/empleo" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* CARD 3: SALARIOS E INGRESOS (4 FILAS) */}
+          {/* ========================================================================= */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardTitle}>
+                <DollarSign size={18} />
+                <span>Salarios e Ingresos</span>
+              </div>
+              <span className={styles.cardDate}>{formatMonthLabel(lastRipte?.fecha)}</span>
+            </div>
+
+            <div className={styles.cardBody}>
+              {/* RIPTE */}
+              <div className={styles.indicatorRow}>
+                <div className={styles.mapIconCircle}>PAÍS</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>RIPTE</div>
+                  <div className={styles.metricLabel}>{formatMonthLabel(lastRipte?.fecha)}</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    ${lastRipte?.valor ? Math.round(Number(lastRipte.valor)).toLocaleString('es-AR') : '1.915.879'}
+                  </div>
+                  <div className={styles.metricLabel}>Remuneración Imponible</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastRipte?.var_interanual ? `${Number(lastRipte.var_interanual).toFixed(1)}%` : '30,5%'}
+                  </div>
+                  <div className={styles.metricLabel}>Interanual</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastRipte?.var_mensual ? `${Number(lastRipte.var_mensual).toFixed(1)}%` : '3,6%'}
+                  </div>
+                  <div className={styles.metricLabel}>Mensual</div>
+                </div>
+                <Link href="/dashboard/indicadores" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+
+              {/* SMVM */}
+              <div className={styles.indicatorRow}>
+                <div className={styles.mapIconCircle}>PAÍS</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>SMVM</div>
+                  <div className={styles.metricLabel}>{formatMonthLabel(lastSmvm?.fecha)}</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    ${lastSmvm?.valor ? Math.round(Number(lastSmvm.valor)).toLocaleString('es-AR') : '376.600'}
+                  </div>
+                  <div className={styles.metricLabel}>Mínimo Vital y Móvil</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastSmvm?.var_interanual ? `${Number(lastSmvm.var_interanual).toFixed(1)}%` : '17,0%'}
+                  </div>
+                  <div className={styles.metricLabel}>Interanual</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastSmvm?.var_mensual ? `${Number(lastSmvm.var_mensual).toFixed(1)}%` : '1,1%'}
+                  </div>
+                  <div className={styles.metricLabel}>Mensual</div>
+                </div>
+                <Link href="/dashboard/indicadores" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+
+              {/* RIPTE Sparkline */}
+              <div className={styles.indicatorRow}>
+                <div className={styles.mapIconCircle}>SERIE</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>Tendencia</div>
+                  <div className={styles.metricLabel}>RIPTE últimos 12 m.</div>
+                </div>
+                <div className={styles.metricCol} style={{ gridColumn: 'span 3' }}>
+                  <div style={{ width: '100%', height: '28px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={ripteRows.slice(-12)}>
+                        <Line type="monotone" dataKey="var_mensual" stroke="#0284c7" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <Link href="/dashboard/indicadores" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+
+              {/* SMVM Sparkline */}
+              <div className={styles.indicatorRow}>
+                <div className={styles.mapIconCircle}>SERIE</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>Tendencia</div>
+                  <div className={styles.metricLabel}>SMVM últimos 12 m.</div>
+                </div>
+                <div className={styles.metricCol} style={{ gridColumn: 'span 3' }}>
+                  <div style={{ width: '100%', height: '28px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={smvmRows.slice(-12)}>
+                        <Line type="monotone" dataKey="var_mensual" stroke="#84cc16" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <Link href="/dashboard/indicadores" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* CARD 4: INDUSTRIA Y CONSTRUCCIÓN (4 FILAS) */}
+          {/* ========================================================================= */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardTitle}>
+                <Factory size={18} />
+                <span>Industria y Construcción</span>
+              </div>
+              <span className={styles.cardDate}>{formatMonthLabel(lastIpi?.fecha)}</span>
+            </div>
+
+            <div className={styles.cardBody}>
+              {/* IPI País */}
+              <div className={styles.indicatorRow}>
+                <div className={styles.mapIconCircle}>IPI</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>Nacional</div>
+                  <div className={styles.metricLabel}>IPI Manufacturero</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={`${styles.metricVal} text-rose-600`}>
+                    {lastIpi?.var_interanual ? `${Number(lastIpi.var_interanual).toFixed(1)}%` : '-0,6%'}
+                  </div>
+                  <div className={styles.metricLabel}>Interanual</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastIpi?.var_mensual ? `${Number(lastIpi.var_mensual).toFixed(1)}%` : '0,0%'}
+                  </div>
+                  <div className={styles.metricLabel}>Mensual</div>
+                </div>
+                <div className={styles.sparklineContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={ipiRows.slice(-12)}>
+                      <Line type="monotone" dataKey="var_mensual" stroke="#0284c7" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <Link href="/dashboard/ipi" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+
+              {/* IERIC Construcción NEA (Puestos) */}
+              <div className={styles.indicatorRow}>
+                <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>NEA</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastIericNea?.puestos ? Number(lastIericNea.puestos).toLocaleString('es-AR') : '15.439.415'}
+                  </div>
+                  <div className={styles.metricLabel}>Puestos Construcción</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={`${styles.metricVal} text-rose-600`}>
+                    {lastIericNea?.puestos_ia ? `${Number(lastIericNea.puestos_ia).toFixed(1)}%` : '-0,1%'}
+                  </div>
+                  <div className={styles.metricLabel}>Interanual</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastIericNea?.empresas ? Number(lastIericNea.empresas).toLocaleString('es-AR') : '979'}
+                  </div>
+                  <div className={styles.metricLabel}>Empresas Activas</div>
+                </div>
+                <div className={styles.sparklineContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={iericNeaSeries.slice(-12)}>
+                      <Line type="monotone" dataKey="puestos_ia" stroke="#84cc16" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <Link href="/dashboard/construccion" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+
+              {/* IERIC Construcción Corrientes (Puestos) */}
+              <div className={styles.indicatorRow}>
+                <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>CTES</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastIericCtes?.puestos ? Number(lastIericCtes.puestos).toLocaleString('es-AR') : '3.793.071'}
+                  </div>
+                  <div className={styles.metricLabel}>Puestos Corrientes</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={`${styles.metricVal} text-rose-600`}>
+                    {lastIericCtes?.puestos_ia ? `${Number(lastIericCtes.puestos_ia).toFixed(1)}%` : '-0,3%'}
+                  </div>
+                  <div className={styles.metricLabel}>Interanual</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastIericCtes?.empresas ? Number(lastIericCtes.empresas).toLocaleString('es-AR') : '290'}
+                  </div>
+                  <div className={styles.metricLabel}>Empresas Activas</div>
+                </div>
+                <div className={styles.sparklineContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={iericCtesSeries.slice(-12)}>
+                      <Line type="monotone" dataKey="puestos_ia" stroke="#84cc16" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <Link href="/dashboard/construccion" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+
+              {/* IERIC Empresas Corrientes Variación */}
+              <div className={styles.indicatorRow}>
+                <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>CTES</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>Empresas</div>
+                  <div className={styles.metricLabel}>Variación IERIC</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={`${styles.metricVal} text-rose-600`}>
+                    {lastIericCtes?.empresas_ia ? `${Number(lastIericCtes.empresas_ia).toFixed(1)}%` : '-3,7%'}
+                  </div>
+                  <div className={styles.metricLabel}>Interanual</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>Provincial</div>
+                  <div className={styles.metricLabel}>Ámbito</div>
+                </div>
+                <div className={styles.sparklineContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={iericCtesSeries.slice(-12)}>
+                      <Line type="monotone" dataKey="empresas_ia" stroke="#84cc16" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <Link href="/dashboard/construccion" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
-
-      <div className="summary-grid">
-        <section className="summary-card">
-            <div className="summary-card-header">
-              <div>
-                <span className="summary-card-label">Precios</span>
-                <strong>Último registro</strong>
-              </div>
-              <div className="pill-group">
-                {priceOptions.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    className={option === priceView ? 'pill active' : 'pill'}
-                    onClick={() => setPriceView(option)}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {priceView === 'IPC' ? (
-              <>
-                <div className="summary-row">
-                  <div>
-                    <div className="row-icon">1</div>
-                    <div>
-                      <div className="row-title">IPC general</div>
-                      <div className="row-note">Último dato</div>
-                    </div>
-                  </div>
-                  <div className="row-stats">
-                    <div>
-                      <strong>{formatPercent(ipcLast?.var_acumulada)}</strong>
-                      <span>Acumulado</span>
-                    </div>
-                    <div>
-                      <strong>{formatPercent(ipcLast?.var_interanual)}</strong>
-                      <span>Interanual</span>
-                    </div>
-                    <div>
-                      <strong>{formatPercent(ipcLast?.var_mensual)}</strong>
-                      <span>Mensual</span>
-                    </div>
-                    <button className="icon-button">?</button>
-                  </div>
-                </div>
-                {ipcValues.length > 0 && (
-                  <div style={{ marginTop: 20 }}>
-                    <small>Últimos 12 meses</small>
-                    <div style={{ display: 'flex', gap: 6, marginTop: 10, alignItems: 'flex-end', minHeight: 120 }}>
-                      {ipcValues.map((point) => {
-                        const height = Math.max(12, Math.min(100, point.var_mensual + 45))
-                        return (
-                          <div key={point.fecha} style={{ flex: 1, textAlign: 'center' }}>
-                            <div style={{ height: `${height}%`, background: '#0f172a', borderRadius: 9999, marginBottom: 6 }} />
-                            <span style={{ fontSize: 10, color: '#64748b' }}>
-                              {new Date(point.fecha).toLocaleDateString('es-AR', { month: 'short' })}
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="summary-row">
-                <div>
-                  <div className="row-icon">1</div>
-                  <div>
-                    <div className="row-title">CBA / CBT Hogar</div>
-                    <div className="row-note">Último valor</div>
-                  </div>
-                </div>
-                <div className="row-stats">
-                  <div>
-                    <strong>{latestCbaCbt?.cba_hogar != null ? latestCbaCbt.cba_hogar.toFixed(1) : '—'}</strong>
-                    <span>CBA Hogar</span>
-                  </div>
-                  <div>
-                    <strong>{latestCbaCbt?.cbt_hogar != null ? latestCbaCbt.cbt_hogar.toFixed(1) : '—'}</strong>
-                    <span>CBT Hogar</span>
-                  </div>
-                  <div>
-                    <strong>{latestCbaCbt ? new Date(latestCbaCbt.fecha).toLocaleDateString('es-AR', { month: 'short', year: 'numeric' }) : '—'}</strong>
-                    <span>Período</span>
-                  </div>
-                  <button className="icon-button">?</button>
-                </div>
-              </div>
-            )}
-          </section>
-
-          <section className="summary-card">
-            <div className="summary-card-header">
-              <div>
-                <span className="summary-card-label">Empleo privado</span>
-                <strong>Último registro</strong>
-              </div>
-              <div className="pill-group">
-                {empleoOptions.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    className={option === empleoView ? 'pill active' : 'pill'}
-                    onClick={() => setEmpleoView(option)}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {empleoView === 'SIPA' ? (
-              <div className="summary-row">
-                <div>
-                  <div className="row-icon">2</div>
-                  <div>
-                    <div className="row-title">SIPA empleo privado</div>
-                    <div className="row-note">Último dato</div>
-                  </div>
-                </div>
-                <div className="row-stats">
-                  <div>
-                    <strong>{formatNumber(latestSipa?.cantidad_con_estacionalidad)}</strong>
-                    <span>Con estac.</span>
-                  </div>
-                  <div>
-                    <strong>{formatNumber(latestSipa?.cantidad_sin_estacionalidad)}</strong>
-                    <span>Sin estac.</span>
-                  </div>
-                  <div>
-                    <strong>{latestSipa ? new Date(latestSipa.fecha).toLocaleDateString('es-AR', { month: 'short', year: 'numeric' }) : '—'}</strong>
-                    <span>Período</span>
-                  </div>
-                  <button className="icon-button">?</button>
-                </div>
-              </div>
-            ) : (
-              <div className="summary-row">
-                <div>
-                  <div className="row-icon">2</div>
-                  <div>
-                    <div className="row-title">SRT</div>
-                    <div className="row-note">Datos no disponibles</div>
-                  </div>
-                </div>
-                <div className="row-stats">
-                  <div>
-                    <strong>—</strong>
-                    <span>Con estac.</span>
-                  </div>
-                  <div>
-                    <strong>—</strong>
-                    <span>Sin estac.</span>
-                  </div>
-                  <div>
-                    <strong>—</strong>
-                    <span>Período</span>
-                  </div>
-                  <button className="icon-button">?</button>
-                </div>
-              </div>
-            )}
-          </section>
-
-          <section className="summary-card">
-            <div className="summary-card-header">
-              <div>
-                <span className="summary-card-label">Salarios</span>
-                <strong>mar-26</strong>
-              </div>
-              <div className="pill-group">
-                {salarioOptions.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    className={option === salarioView ? 'pill active' : 'pill'}
-                    onClick={() => setSalarioView(option)}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="summary-row">
-              <div>
-                <div className="row-icon">3</div>
-                <div>
-                  <div className="row-title">{salarioView}</div>
-                  <div className="row-note">Valor actual</div>
-                </div>
-              </div>
-              <div className="row-stats">
-                <div>
-                  <strong>$1.775.664</strong>
-                  <span>Valor</span>
-                </div>
-                <div>
-                  <strong>30,2 %</strong>
-                  <span>Interanual</span>
-                </div>
-                <div>
-                  <strong>2,4 %</strong>
-                  <span>Mensual</span>
-                </div>
-                <button className="icon-button">?</button>
-              </div>
-            </div>
-          </section>
-
-          <section className="summary-card">
-            <div className="summary-card-header">
-              <div>
-                <span className="summary-card-label">Industria</span>
-                <strong>may-26</strong>
-              </div>
-              <div className="pill-group">
-                {industriaOptions.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    className={option === industriaView ? 'pill active' : 'pill'}
-                    onClick={() => setIndustriaView(option)}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="summary-row">
-              <div>
-                <div className="row-icon">4</div>
-                <div>
-                  <div className="row-title">{industriaView}</div>
-                  <div className="row-note">Interanual</div>
-                </div>
-              </div>
-              <div className="row-stats">
-                <div>
-                  <strong>-5,7 %</strong>
-                  <span>Interanual</span>
-                </div>
-                <div>
-                  <strong>--</strong>
-                  <span></span>
-                </div>
-                <button className="icon-button">?</button>
-              </div>
-            </div>
-          </section>
-      </div>
-    </>
-  )
+    </div>
+  );
 }

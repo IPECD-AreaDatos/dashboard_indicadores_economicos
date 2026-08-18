@@ -1,0 +1,151 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 1650px;
+  margin: 0 auto;
+  height: calc(100vh - 90px);
+  overflow: hidden; /* Evita cualquier scroll */
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding-bottom: 4px;
+}
+
+.titleGroup h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+/* GRID 2X2 SIN SCROLL */
+.gridCards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 16px;
+  flex: 1;
+  min-height: 0; /* Permite que el grid respete el alto del contenedor */
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.cardHeader {
+  background-color: #14203b;
+  color: #ffffff;
+  padding: 10px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.cardDate {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.cardBody {
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  gap: 6px;
+  min-height: 0;
+}
+
+.indicatorRow {
+  display: grid;
+  grid-template-columns: 42px 1.2fr 1fr 1fr 1fr 28px;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 0;
+}
+
+.mapIconCircle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.68rem;
+  flex-shrink: 0;
+}
+
+.mapIconCorrientes {
+  background-color: #84cc16;
+  color: #14532d;
+}
+
+.metricCol {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.metricVal {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metricLabel {
+  font-size: 0.68rem;
+  color: #64748b;
+  font-weight: 600;
+  margin-top: 1px;
+  white-space: nowrap;
+}
+
+.sparklineContainer {
+  width: 90px;
+  height: 28px;
+}
+
+.arrowLink {
+  color: #15803d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.arrowLink:hover {
+  transform: translateX(2px);
+  color: #16a34a;
+}

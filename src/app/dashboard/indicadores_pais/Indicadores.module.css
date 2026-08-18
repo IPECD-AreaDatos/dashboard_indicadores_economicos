@@ -1,0 +1,185 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid #cbd5e1;
+}
+
+.titleGroup h1 {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.titleGroup p {
+  margin: 3px 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* GRID PRINCIPAL: 1FR (GRÁFICO) + 300PX (CHECKBOXES INDICADORES) */
+.mainGrid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;
+  align-items: start;
+}
+
+.chartCard {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 26px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.viewModeControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modeBtn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modeBtnActive {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #86efac;
+}
+
+.yearFilter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #14203b;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.yearBtn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.yearBtnActive {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.chartScrollArea {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.chartCanvas {
+  min-width: 850px;
+  height: 480px;
+}
+
+/* CARD LATERAL DE INDICADORES */
+.indicatorsCard {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.badgeIndicators {
+  background-color: #86efac;
+  color: #14532d;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  align-self: flex-start;
+}
+
+.indicatorsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.indicatorItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+  user-select: none;
+}
+
+.indicatorItem input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #14203b;
+  cursor: pointer;
+}
+
+.colorBullet {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.footerNote {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 8px;
+}
+
+@media (max-width: 1024px) {
+  .mainGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,297 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1450px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid #cbd5e1;
+}
+
+.titleGroup h1 {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.titleGroup p {
+  margin: 3px 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.topControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tabsContainer {
+  display: flex;
+  background-color: #14203b;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.tabBtn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tabBtnActive {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.selectFilter {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+}
+
+/* GRID PRINCIPAL */
+.mainGrid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+.chartCard {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 26px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.badgeCategory {
+  background-color: #d1fae5;
+  color: #065f46;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.metricSelectors {
+  display: flex;
+  gap: 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.radioOption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.yearFilter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #14203b;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.yearBtn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.yearBtnActive {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.chartScrollArea {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.chartCanvas {
+  min-width: 850px;
+  height: 480px;
+}
+
+/* TABLA SUBDIVISIONES */
+.tableWrapper {
+  overflow-x: auto;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  background-color: #14203b;
+  color: #ffffff;
+  padding: 12px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.table tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* KPIS LATERALES */
+.kpiColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dateDisplay {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #15803d;
+}
+
+.kpiCard {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 22px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+}
+
+.kpiTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e2d4a;
+  margin-bottom: 12px;
+}
+
+.kpiItem {
+  margin-bottom: 14px;
+}
+
+.kpiItem:last-child {
+  margin-bottom: 0;
+}
+
+.kpiVal {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.kpiLabel {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.topIncItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.85rem;
+}
+
+.topIncItem:last-child {
+  border-bottom: none;
+}
+
+.topIncName {
+  font-weight: 600;
+  color: #334155;
+}
+
+.topIncVal {
+  font-weight: 800;
+  color: #15803d;
+}
+
+.navBottomBtn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #14203b;
+  color: #ffffff;
+  border: none;
+  padding: 14px 22px;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+}
+
+.navBottomBtn:hover {
+  background-color: #1e2d4a;
+}
+
+.footerNote {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 8px;
+}
+
+@media (max-width: 1024px) {
+  .mainGrid {
+    grid-template-columns: 1fr;
+  }
+}

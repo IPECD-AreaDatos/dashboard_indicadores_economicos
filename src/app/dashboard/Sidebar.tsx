@@ -39,14 +39,14 @@ const menuGroups: MenuGroup[] = [
     category: 'MACROECONOMÍA Y PRECIOS',
     items: [
       { name: 'Precios (IPC)', href: '/dashboard/ipc', icon: TrendingUp },
-      { name: 'Indicadores País', href: '/dashboard/indicadores-pais', icon: DollarSign },
+      { name: 'Indicadores País', href: '/dashboard/indicadores_pais', icon: DollarSign },
     ],
   },
   {
     category: 'EMPLEO Y SALARIOS',
     items: [
-      { name: 'Empleo Nacional (SIPA)', href: '/dashboard/empleo-nacional', icon: Users },
-      { name: 'Empleo Provincial y NEA', href: '/dashboard/empleo-provincial', icon: Briefcase },
+      { name: 'Empleo Nacional (SIPA)', href: '/dashboard/empleo_nacional', icon: Users },
+      { name: 'Empleo Provincial y NEA', href: '/dashboard/empleo_provincial', icon: Briefcase },
     ],
   },
   {
