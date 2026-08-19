@@ -15,49 +15,73 @@ export async function GET(request: NextRequest) {
     const client = await pool.connect();
     await client.query('SET search_path TO public;');
 
-    // 1. Serie Histórica Nivel General (id_division = 0 o id_categoria = 0 según tu base)
+    // 1. Serie Histórica: Obtenemos Nivel General asegurando coincidencia por nombre o IDs
     const querySerie = `
       SELECT 
         TO_CHAR(i.fecha, 'YYYY-MM-DD') as fecha,
-        i.id_region,
-        COALESCE(r.nombre_region, 'Nacion') as nombre_region,
+        COALESCE(i.id_region, 0) as id_region,
+        COALESCE(r.nombre_region, 'Nación') as nombre_region,
         i.valor,
-        i.var_mensual,
-        i.var_interanual,
-        i.var_acumulada
+        CASE 
+          WHEN ABS(COALESCE(i.var_mensual, 0)) < 1 AND COALESCE(i.var_mensual, 0) != 0 
+          THEN ROUND((i.var_mensual * 100)::numeric, 1)
+          ELSE ROUND(COALESCE(i.var_mensual, 0)::numeric, 1)
+        END as var_mensual,
+        CASE 
+          WHEN ABS(COALESCE(i.var_interanual, 0)) < 1 AND COALESCE(i.var_interanual, 0) != 0 
+          THEN ROUND((i.var_interanual * 100)::numeric, 1)
+          ELSE ROUND(COALESCE(i.var_interanual, 0)::numeric, 1)
+        END as var_interanual,
+        CASE 
+          WHEN ABS(COALESCE(i.var_acumulada, 0)) < 1 AND COALESCE(i.var_acumulada, 0) != 0 
+          THEN ROUND((i.var_acumulada * 100)::numeric, 1)
+          ELSE ROUND(COALESCE(i.var_acumulada, 0)::numeric, 1)
+        END as var_acumulada
       FROM ipc i
       LEFT JOIN dicc_region r ON i.id_region = r.id_region
-      WHERE (i.id_division = 0 OR i.id_division IS NULL) 
-        AND (i.id_subdivision = 0 OR i.id_subdivision IS NULL)
+      LEFT JOIN ipc_division div ON i.id_division = div.id_division
+      WHERE (i.id_subdivision IS NULL OR i.id_subdivision = 0)
+        AND (
+          i.id_division IS NULL 
+          OR i.id_division = 0 
+          OR LOWER(COALESCE(div.nombre, '')) LIKE '%general%'
+        )
       ORDER BY i.fecha ASC;
     `;
 
-    // 2. Aperturas y Subdivisiones con Nombres de Diccionarios
+    // 2. Aperturas y Divisiones
     const queryAperturas = `
       SELECT 
         TO_CHAR(i.fecha, 'YYYY-MM-DD') as fecha,
-        i.id_region,
-        COALESCE(r.nombre_region, 'Nacion') as nombre_region,
-        i.id_categoria,
-        COALESCE(cat.nombre, 'General') as nombre_categoria,
+        COALESCE(i.id_region, 0) as id_region,
+        COALESCE(r.nombre_region, 'Nación') as nombre_region,
         i.id_division,
         COALESCE(div.nombre, d.nombre, 'Nivel general') as nombre_division,
         i.id_subdivision,
+        d.nombre as nombre_subdivision,
         i.valor,
-        i.var_mensual,
-        i.var_interanual,
-        i.var_acumulada
+        CASE 
+          WHEN ABS(COALESCE(i.var_mensual, 0)) < 1 AND COALESCE(i.var_mensual, 0) != 0 
+          THEN ROUND((i.var_mensual * 100)::numeric, 1)
+          ELSE ROUND(COALESCE(i.var_mensual, 0)::numeric, 1)
+        END as var_mensual,
+        CASE 
+          WHEN ABS(COALESCE(i.var_interanual, 0)) < 1 AND COALESCE(i.var_interanual, 0) != 0 
+          THEN ROUND((i.var_interanual * 100)::numeric, 1)
+          ELSE ROUND(COALESCE(i.var_interanual, 0)::numeric, 1)
+        END as var_interanual
       FROM ipc i
       LEFT JOIN dicc_region r ON i.id_region = r.id_region
-      LEFT JOIN ipc_categoria cat ON i.id_categoria = cat.id_categoria
-      LEFT JOIN ipc_division div ON i.id_division = div.id_division AND i.id_categoria = div.id_categoria
-      LEFT JOIN dicc_ipc d ON i.id_subdivision = d.id_subdivision AND i.id_division = d.id_division
-      ORDER BY i.fecha DESC, i.var_interanual DESC;
+      LEFT JOIN ipc_division div ON i.id_division = div.id_division
+      LEFT JOIN dicc_ipc d ON i.id_subdivision = d.id_subdivision AND (i.id_division = d.id_division OR d.id_division IS NULL)
+      ORDER BY i.fecha DESC, var_interanual DESC;
     `;
 
     // 3. Regiones
     const queryRegiones = `
-      SELECT DISTINCT i.id_region, COALESCE(r.nombre_region, 'Nacion') as nombre_region
+      SELECT DISTINCT 
+        COALESCE(i.id_region, 0) as id_region, 
+        COALESCE(r.nombre_region, 'Nación') as nombre_region
       FROM ipc i
       LEFT JOIN dicc_region r ON i.id_region = r.id_region
       ORDER BY nombre_region ASC;
@@ -65,8 +89,8 @@ export async function GET(request: NextRequest) {
 
     // 4. Fechas únicas
     const queryFechas = `
-      SELECT DISTINCT TO_CHAR(fecha, 'YYYY-MM-DD') as fecha
-      FROM ipc
+      SELECT DISTINCT TO_CHAR(fecha, 'YYYY-MM-DD') as fecha 
+      FROM ipc 
       ORDER BY fecha DESC;
     `;
 
@@ -86,9 +110,9 @@ export async function GET(request: NextRequest) {
       fechasDisponibles: resFechas.rows.map((r) => r.fecha),
     });
   } catch (error: any) {
-    console.error('Error fetching IPC data:', error);
+    console.error('Error en /api/ipc:', error);
     return NextResponse.json(
-      { error: 'Error al consultar las tablas de IPC', details: error.message },
+      { error: 'Error al consultar IPC', details: error.message },
       { status: 500 }
     );
   }

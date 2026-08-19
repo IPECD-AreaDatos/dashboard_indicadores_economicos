@@ -45,8 +45,14 @@ export default function ResumenPrincipalPage() {
 
   // 1. PRECIOS & CANASTAS
   const ipcRows = data?.ipc || [];
-  const ipcNacSeries = ipcRows.filter((r: any) => r.region?.toLowerCase().includes('nacion'));
-  const ipcNeaSeries = ipcRows.filter((r: any) => r.region?.toLowerCase().includes('nea'));
+  const ipcNacSeries = ipcRows.filter((r: any) => r.region?.toLowerCase().includes('nacion')).map((r: any) => ({
+    ...r,
+    var_mensual: Number(r.var_mensual) || 0,
+  }));
+  const ipcNeaSeries = ipcRows.filter((r: any) => r.region?.toLowerCase().includes('nea')).map((r: any) => ({
+    ...r,
+    var_mensual: Number(r.var_mensual) || 0,
+  }));
   const lastIpcNac = ipcNacSeries[ipcNacSeries.length - 1];
   const lastIpcNea = ipcNeaSeries[ipcNeaSeries.length - 1] || lastIpcNac;
 
@@ -90,6 +96,9 @@ export default function ResumenPrincipalPage() {
   const ipiRows = data?.ipi || [];
   const lastIpi = ipiRows[ipiRows.length - 1];
 
+  const ipicorrRows = data?.ipicorr || [];
+  const lastIpicorr = ipicorrRows[ipicorrRows.length - 1];
+
   const iericRows = data?.ieric || [];
   const iericNeaSeries = iericRows.filter((r: any) => r.ambito === 'NEA');
   const iericCtesSeries = iericRows.filter((r: any) => r.ambito === 'Corrientes');
@@ -98,7 +107,6 @@ export default function ResumenPrincipalPage() {
 
   return (
     <div className={styles.container}>
-      {/* Título simple sin botón semáforo */}
       <div className={styles.header}>
         <div className={styles.titleGroup}>
           <h1>PRINCIPALES INDICADORES ECONÓMICOS</h1>
@@ -117,14 +125,14 @@ export default function ResumenPrincipalPage() {
           <div className={styles.card}>
             <div className={styles.cardHeader}>
               <div className={styles.cardTitle}>
-                <Tag size={18} />
+                <Tag size={16} />
                 <span>Precios y Canastas Básicas</span>
               </div>
               <span className={styles.cardDate}>{formatMonthLabel(lastIpcNac?.fecha)}</span>
             </div>
 
             <div className={styles.cardBody}>
-              {/* IPC Nación */}
+              {/* 1. IPC Nación */}
               <div className={styles.indicatorRow}>
                 <div className={styles.mapIconCircle}>PAÍS</div>
                 <div className={styles.metricCol}>
@@ -157,7 +165,7 @@ export default function ResumenPrincipalPage() {
                 </Link>
               </div>
 
-              {/* IPC NEA */}
+              {/* 2. IPC NEA */}
               <div className={styles.indicatorRow}>
                 <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>NEA</div>
                 <div className={styles.metricCol}>
@@ -190,7 +198,7 @@ export default function ResumenPrincipalPage() {
                 </Link>
               </div>
 
-              {/* CBT Hogar */}
+              {/* 3. CBT Hogar */}
               <div className={styles.indicatorRow}>
                 <div className={styles.mapIconCircle}>CBT</div>
                 <div className={styles.metricCol}>
@@ -218,12 +226,12 @@ export default function ResumenPrincipalPage() {
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-                <Link href="/dashboard/indicadores" className={styles.arrowLink}>
+                <Link href="/dashboard/indicadores_pais" className={styles.arrowLink}>
                   <ArrowUpRight size={18} />
                 </Link>
               </div>
 
-              {/* CBA Hogar */}
+              {/* 4. CBA Hogar */}
               <div className={styles.indicatorRow}>
                 <div className={styles.mapIconCircle}>CBA</div>
                 <div className={styles.metricCol}>
@@ -251,7 +259,7 @@ export default function ResumenPrincipalPage() {
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-                <Link href="/dashboard/indicadores" className={styles.arrowLink}>
+                <Link href="/dashboard/indicadores_pais" className={styles.arrowLink}>
                   <ArrowUpRight size={18} />
                 </Link>
               </div>
@@ -264,14 +272,14 @@ export default function ResumenPrincipalPage() {
           <div className={styles.card}>
             <div className={styles.cardHeader}>
               <div className={styles.cardTitle}>
-                <Users size={18} />
+                <Users size={16} />
                 <span>Empleo Privado y Registrado</span>
               </div>
               <span className={styles.cardDate}>{formatMonthLabel(lastSipaNac?.fecha)}</span>
             </div>
 
             <div className={styles.cardBody}>
-              {/* SIPA Nación */}
+              {/* 1. SIPA Nación */}
               <div className={styles.indicatorRow}>
                 <div className={styles.mapIconCircle}>PAÍS</div>
                 <div className={styles.metricCol}>
@@ -299,12 +307,12 @@ export default function ResumenPrincipalPage() {
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-                <Link href="/dashboard/empleo-nacional" className={styles.arrowLink}>
+                <Link href="/dashboard/empleo_nacional" className={styles.arrowLink}>
                   <ArrowUpRight size={18} />
                 </Link>
               </div>
 
-              {/* SIPA Corrientes */}
+              {/* 2. SIPA Corrientes */}
               <div className={styles.indicatorRow}>
                 <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>CTES</div>
                 <div className={styles.metricCol}>
@@ -332,12 +340,12 @@ export default function ResumenPrincipalPage() {
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-                <Link href="/dashboard/empleo" className={styles.arrowLink}>
+                <Link href="/dashboard/empleo_nacional" className={styles.arrowLink}>
                   <ArrowUpRight size={18} />
                 </Link>
               </div>
 
-              {/* SRT País */}
+              {/* 3. SRT Nación */}
               <div className={styles.indicatorRow}>
                 <div className={styles.mapIconCircle}>PAÍS</div>
                 <div className={styles.metricCol}>
@@ -348,7 +356,7 @@ export default function ResumenPrincipalPage() {
                 </div>
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
-                    ${lastSrtNac?.salario_promedio ? Math.round(Number(lastSrtNac.salario_promedio)).toLocaleString('es-AR') : '850.000'}
+                    ${lastSrtNac?.salario_promedio ? Math.round(Number(lastSrtNac.salario_promedio)).toLocaleString('es-AR') : '$850.000'}
                   </div>
                   <div className={styles.metricLabel}>Salario Promedio</div>
                 </div>
@@ -363,12 +371,12 @@ export default function ResumenPrincipalPage() {
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-                <Link href="/dashboard/empleo" className={styles.arrowLink}>
+                <Link href="/dashboard/empleo_provincial" className={styles.arrowLink}>
                   <ArrowUpRight size={18} />
                 </Link>
               </div>
 
-              {/* SRT Corrientes */}
+              {/* 4. SRT Corrientes */}
               <div className={styles.indicatorRow}>
                 <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>CTES</div>
                 <div className={styles.metricCol}>
@@ -379,7 +387,7 @@ export default function ResumenPrincipalPage() {
                 </div>
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
-                    ${lastSrtCtes?.salario_promedio ? Math.round(Number(lastSrtCtes.salario_promedio)).toLocaleString('es-AR') : '713.464'}
+                    ${lastSrtCtes?.salario_promedio ? Math.round(Number(lastSrtCtes.salario_promedio)).toLocaleString('es-AR') : '$713.464'}
                   </div>
                   <div className={styles.metricLabel}>Salario Promedio</div>
                 </div>
@@ -394,7 +402,7 @@ export default function ResumenPrincipalPage() {
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-                <Link href="/dashboard/empleo" className={styles.arrowLink}>
+                <Link href="/dashboard/empleo_provincial" className={styles.arrowLink}>
                   <ArrowUpRight size={18} />
                 </Link>
               </div>
@@ -407,14 +415,14 @@ export default function ResumenPrincipalPage() {
           <div className={styles.card}>
             <div className={styles.cardHeader}>
               <div className={styles.cardTitle}>
-                <DollarSign size={18} />
+                <DollarSign size={16} />
                 <span>Salarios e Ingresos</span>
               </div>
               <span className={styles.cardDate}>{formatMonthLabel(lastRipte?.fecha)}</span>
             </div>
 
             <div className={styles.cardBody}>
-              {/* RIPTE */}
+              {/* 1. RIPTE */}
               <div className={styles.indicatorRow}>
                 <div className={styles.mapIconCircle}>PAÍS</div>
                 <div className={styles.metricCol}>
@@ -423,9 +431,9 @@ export default function ResumenPrincipalPage() {
                 </div>
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
-                    ${lastRipte?.valor ? Math.round(Number(lastRipte.valor)).toLocaleString('es-AR') : '1.915.879'}
+                    ${lastRipte?.valor ? Math.round(Number(lastRipte.valor)).toLocaleString('es-AR') : '$1.915.879'}
                   </div>
-                  <div className={styles.metricLabel}>Remuneración Imponible</div>
+                  <div className={styles.metricLabel}>Monto RIPTE</div>
                 </div>
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
@@ -439,12 +447,12 @@ export default function ResumenPrincipalPage() {
                   </div>
                   <div className={styles.metricLabel}>Mensual</div>
                 </div>
-                <Link href="/dashboard/indicadores" className={styles.arrowLink}>
+                <Link href="/dashboard/indicadores_pais" className={styles.arrowLink}>
                   <ArrowUpRight size={18} />
                 </Link>
               </div>
 
-              {/* SMVM */}
+              {/* 2. SMVM */}
               <div className={styles.indicatorRow}>
                 <div className={styles.mapIconCircle}>PAÍS</div>
                 <div className={styles.metricCol}>
@@ -453,9 +461,9 @@ export default function ResumenPrincipalPage() {
                 </div>
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
-                    ${lastSmvm?.valor ? Math.round(Number(lastSmvm.valor)).toLocaleString('es-AR') : '376.600'}
+                    ${lastSmvm?.valor ? Math.round(Number(lastSmvm.valor)).toLocaleString('es-AR') : '$376.600'}
                   </div>
-                  <div className={styles.metricLabel}>Mínimo Vital y Móvil</div>
+                  <div className={styles.metricLabel}>Monto SMVM</div>
                 </div>
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
@@ -469,12 +477,12 @@ export default function ResumenPrincipalPage() {
                   </div>
                   <div className={styles.metricLabel}>Mensual</div>
                 </div>
-                <Link href="/dashboard/indicadores" className={styles.arrowLink}>
+                <Link href="/dashboard/indicadores_pais" className={styles.arrowLink}>
                   <ArrowUpRight size={18} />
                 </Link>
               </div>
 
-              {/* RIPTE Sparkline */}
+              {/* 3. RIPTE Sparkline */}
               <div className={styles.indicatorRow}>
                 <div className={styles.mapIconCircle}>SERIE</div>
                 <div className={styles.metricCol}>
@@ -482,7 +490,7 @@ export default function ResumenPrincipalPage() {
                   <div className={styles.metricLabel}>RIPTE últimos 12 m.</div>
                 </div>
                 <div className={styles.metricCol} style={{ gridColumn: 'span 3' }}>
-                  <div style={{ width: '100%', height: '28px' }}>
+                  <div style={{ width: '100%', height: '26px' }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={ripteRows.slice(-12)}>
                         <Line type="monotone" dataKey="var_mensual" stroke="#0284c7" strokeWidth={2} dot={false} />
@@ -495,7 +503,7 @@ export default function ResumenPrincipalPage() {
                 </Link>
               </div>
 
-              {/* SMVM Sparkline */}
+              {/* 4. SMVM Sparkline */}
               <div className={styles.indicatorRow}>
                 <div className={styles.mapIconCircle}>SERIE</div>
                 <div className={styles.metricCol}>
@@ -503,7 +511,7 @@ export default function ResumenPrincipalPage() {
                   <div className={styles.metricLabel}>SMVM últimos 12 m.</div>
                 </div>
                 <div className={styles.metricCol} style={{ gridColumn: 'span 3' }}>
-                  <div style={{ width: '100%', height: '28px' }}>
+                  <div style={{ width: '100%', height: '26px' }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={smvmRows.slice(-12)}>
                         <Line type="monotone" dataKey="var_mensual" stroke="#84cc16" strokeWidth={2} dot={false} />
@@ -511,7 +519,7 @@ export default function ResumenPrincipalPage() {
                     </ResponsiveContainer>
                   </div>
                 </div>
-                <Link href="/dashboard/indicadores" className={styles.arrowLink}>
+                <Link href="/dashboard/indicadores_pais" className={styles.arrowLink}>
                   <ArrowUpRight size={18} />
                 </Link>
               </div>
@@ -524,14 +532,14 @@ export default function ResumenPrincipalPage() {
           <div className={styles.card}>
             <div className={styles.cardHeader}>
               <div className={styles.cardTitle}>
-                <Factory size={18} />
+                <Factory size={16} />
                 <span>Industria y Construcción</span>
               </div>
               <span className={styles.cardDate}>{formatMonthLabel(lastIpi?.fecha)}</span>
             </div>
 
             <div className={styles.cardBody}>
-              {/* IPI País */}
+              {/* 1. IPI Manufacturero País */}
               <div className={styles.indicatorRow}>
                 <div className={styles.mapIconCircle}>IPI</div>
                 <div className={styles.metricCol}>
@@ -557,12 +565,43 @@ export default function ResumenPrincipalPage() {
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-                <Link href="/dashboard/ipi" className={styles.arrowLink}>
+                <Link href="/dashboard/industria" className={styles.arrowLink}>
                   <ArrowUpRight size={18} />
                 </Link>
               </div>
 
-              {/* IERIC Construcción NEA (Puestos) */}
+              {/* 2. IPICorr (Corrientes) */}
+              <div className={styles.indicatorRow}>
+                <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>CTES</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>IPICorr</div>
+                  <div className={styles.metricLabel}>{formatMonthLabel(lastIpicorr?.fecha)}</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={`${styles.metricVal} text-rose-600`}>
+                    {lastIpicorr?.var_interanual ? `${Number(lastIpicorr.var_interanual).toFixed(1)}%` : '-0,3%'}
+                  </div>
+                  <div className={styles.metricLabel}>Interanual</div>
+                </div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>
+                    {lastIpicorr?.var_mensual ? `${Number(lastIpicorr.var_mensual).toFixed(1)}%` : '0,0%'}
+                  </div>
+                  <div className={styles.metricLabel}>Mensual</div>
+                </div>
+                <div className={styles.sparklineContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={ipicorrRows.slice(-12)}>
+                      <Line type="monotone" dataKey="var_mensual" stroke="#84cc16" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <Link href="/dashboard/industria" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+
+              {/* 3. IERIC Construcción NEA */}
               <div className={styles.indicatorRow}>
                 <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>NEA</div>
                 <div className={styles.metricCol}>
@@ -595,7 +634,7 @@ export default function ResumenPrincipalPage() {
                 </Link>
               </div>
 
-              {/* IERIC Construcción Corrientes (Puestos) */}
+              {/* 4. IERIC Construcción Corrientes */}
               <div className={styles.indicatorRow}>
                 <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>CTES</div>
                 <div className={styles.metricCol}>
@@ -620,35 +659,6 @@ export default function ResumenPrincipalPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={iericCtesSeries.slice(-12)}>
                       <Line type="monotone" dataKey="puestos_ia" stroke="#84cc16" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-                <Link href="/dashboard/construccion" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
-              </div>
-
-              {/* IERIC Empresas Corrientes Variación */}
-              <div className={styles.indicatorRow}>
-                <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>CTES</div>
-                <div className={styles.metricCol}>
-                  <div className={styles.metricVal}>Empresas</div>
-                  <div className={styles.metricLabel}>Variación IERIC</div>
-                </div>
-                <div className={styles.metricCol}>
-                  <div className={`${styles.metricVal} text-rose-600`}>
-                    {lastIericCtes?.empresas_ia ? `${Number(lastIericCtes.empresas_ia).toFixed(1)}%` : '-3,7%'}
-                  </div>
-                  <div className={styles.metricLabel}>Interanual</div>
-                </div>
-                <div className={styles.metricCol}>
-                  <div className={styles.metricVal}>Provincial</div>
-                  <div className={styles.metricLabel}>Ámbito</div>
-                </div>
-                <div className={styles.sparklineContainer}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={iericCtesSeries.slice(-12)}>
-                      <Line type="monotone" dataKey="empresas_ia" stroke="#84cc16" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>

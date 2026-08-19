@@ -16,12 +16,21 @@ import {
 import { ArrowRight } from 'lucide-react';
 import styles from './Ipc.module.css';
 
+function norm(str?: string) {
+  if (!str) return '';
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toUpperCase();
+}
+
 export default function IpcPage() {
   const [activeTab, setActiveTab] = useState<'serie' | 'aperturas' | 'subdivisiones'>('serie');
   const [metric, setMetric] = useState<'mensual' | 'interanual'>('interanual');
   const [selectedYear, setSelectedYear] = useState<string>('TODOS');
   const [selectedFecha, setSelectedFecha] = useState<string>('');
-  const [selectedRegion, setSelectedRegion] = useState<string>('Nacion');
+  const [selectedRegion, setSelectedRegion] = useState<string>('Nación');
 
   const [rawSerie, setRawSerie] = useState<any[]>([]);
   const [rawAperturas, setRawAperturas] = useState<any[]>([]);
@@ -47,6 +56,11 @@ export default function IpcPage() {
           if (json.fechasDisponibles?.length > 0) {
             setSelectedFecha(json.fechasDisponibles[0]);
           }
+
+          if (json.regiones?.length > 0) {
+            const nac = json.regiones.find((r: any) => norm(r.nombre_region).includes('NACION'));
+            if (nac) setSelectedRegion(nac.nombre_region);
+          }
         }
       } catch (err) {
         console.error('Error cargando IPC:', err);
@@ -57,16 +71,23 @@ export default function IpcPage() {
     fetchData();
   }, []);
 
-  // Procesar serie histórica (Línea)
+  // 1. Serie Histórica (Líneas)
   useEffect(() => {
     if (!rawSerie || rawSerie.length === 0) return;
 
+    const target = norm(selectedRegion);
+
+    // Fallback: si no hay coincidencia exacta, toma las de la región elegida o las generales
     const filtered = rawSerie.filter((row) => {
+      const rowReg = norm(row.nombre_region);
       const matchRegion =
-        selectedRegion === 'Nacion' ||
-        row.nombre_region?.toUpperCase() === selectedRegion.toUpperCase();
+        target.includes('NACION') || target === ''
+          ? rowReg.includes('NACION') || rowReg === '' || Number(row.id_region) <= 1
+          : rowReg.includes(target) || target.includes(rowReg);
+
       const yearStr = row.fecha ? row.fecha.substring(0, 4) : '';
       const matchYear = selectedYear === 'TODOS' || yearStr === selectedYear;
+
       return matchRegion && matchYear;
     });
 
@@ -86,24 +107,30 @@ export default function IpcPage() {
     setChartDataSerie(formatted);
   }, [rawSerie, selectedRegion, selectedYear, metric]);
 
-  // Procesar aperturas/divisiones (Barras)
+  // 2. Aperturas (Barras con grosor correcto)
   useEffect(() => {
     if (!rawAperturas || rawAperturas.length === 0 || !selectedFecha) return;
 
+    const target = norm(selectedRegion);
+
     const filtered = rawAperturas.filter((row) => {
       const matchFecha = row.fecha === selectedFecha;
+      const rowReg = norm(row.nombre_region);
       const matchRegion =
-        selectedRegion === 'Nacion' ||
-        row.nombre_region?.toUpperCase() === selectedRegion.toUpperCase();
+        target.includes('NACION') || target === ''
+          ? rowReg.includes('NACION') || rowReg === '' || Number(row.id_region) <= 1
+          : rowReg.includes(target) || target.includes(rowReg);
+
       return matchFecha && matchRegion && row.nombre_division;
     });
 
-    // Agrupar y ordenar divisiones
+    // Agrupar divisiones únicas
     const divMap: { [key: string]: any } = {};
     filtered.forEach((r) => {
-      if (!divMap[r.nombre_division]) {
-        divMap[r.nombre_division] = {
-          division: r.nombre_division,
+      const divName = r.nombre_division.trim();
+      if (!divMap[divName]) {
+        divMap[divName] = {
+          division: divName,
           var_mensual: Number(r.var_mensual) || 0,
           var_interanual: Number(r.var_interanual) || 0,
         };
@@ -126,16 +153,15 @@ export default function IpcPage() {
     return `${monthsEs[monthNum - 1] || ''}-${dateParts[0].slice(-2)}`;
   };
 
-  // KPIs del mes activo
+  const target = norm(selectedRegion);
   const activeKpiRow = rawSerie.find(
     (r) =>
       r.fecha === selectedFecha &&
-      (selectedRegion === 'Nacion' || r.nombre_region?.toUpperCase() === selectedRegion.toUpperCase())
+      (target.includes('NACION') || norm(r.nombre_region) === target)
   );
 
-  // Top 3 rubros con mayor aumento mensual
   const topAumentosMensuales = [...chartDataAperturas]
-    .filter((d) => d.division.toLowerCase() !== 'nivel general')
+    .filter((d) => !norm(d.division).includes('GENERAL'))
     .sort((a, b) => b.var_mensual - a.var_mensual)
     .slice(0, 3);
 
@@ -149,7 +175,6 @@ export default function IpcPage() {
         </div>
 
         <div className={styles.topControls}>
-          {/* Sub Tabs */}
           <div className={styles.tabsContainer}>
             <button
               className={`${styles.tabBtn} ${activeTab === 'serie' ? styles.tabBtnActive : ''}`}
@@ -176,7 +201,6 @@ export default function IpcPage() {
             value={selectedRegion}
             onChange={(e) => setSelectedRegion(e.target.value)}
           >
-            <option value="Nacion">Nación</option>
             {regionesList.map((r) => (
               <option key={r.id_region} value={r.nombre_region}>
                 {r.nombre_region}
@@ -251,89 +275,102 @@ export default function IpcPage() {
               Cargando datos del IPC...
             </div>
           ) : (
-            <div className={styles.chartScrollArea}>
-              <div className={styles.chartCanvas}>
-                {/* 1. GRÁFICO SERIE HISTÓRICA */}
-                {activeTab === 'serie' && (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartDataSerie}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                      <XAxis dataKey="fechaLabel" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} unit="%" />
-                      <Tooltip formatter={(v: number) => [`${v.toFixed(1)}%`, 'Variación']} />
-                      <Line
-                        type="monotone"
-                        dataKey="valor"
-                        name={metric === 'mensual' ? 'Var. Mensual' : 'Var. Interanual'}
-                        stroke="#15803d"
-                        strokeWidth={3}
-                        dot={{ r: 4, fill: '#15803d' }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
+            <div className={styles.chartCanvas} style={{ height: '540px' }}>
+              {/* 1. SERIE HISTÓRICA */}
+              {activeTab === 'serie' && (
+                <ResponsiveContainer width="100%" height={500}>
+                  <LineChart data={chartDataSerie} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="fechaLabel" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} unit="%" />
+                    <Tooltip
+                      cursor={{ stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '3 3' }}
+                      formatter={(v: number) => [`${v.toFixed(1)}%`, metric === 'mensual' ? 'Mensual' : 'Interanual']}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="valor"
+                      stroke="#15803d"
+                      strokeWidth={3}
+                      dot={{ r: 4, fill: '#15803d' }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
 
-                {/* 2. GRÁFICO BARRAS APERTURAS */}
-                {activeTab === 'aperturas' && (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={chartDataAperturas}
-                      layout="vertical"
-                      margin={{ left: 160, right: 30 }}
+              {/* 2. APERTURAS (BARRAS GRUESAS CON barSize={16}) */}
+              {activeTab === 'aperturas' && (
+                <ResponsiveContainer width="100%" height={520}>
+                  <BarChart
+                    data={chartDataAperturas}
+                    layout="vertical"
+                    margin={{ left: 220, right: 40, top: 10, bottom: 10 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                    <XAxis type="number" tick={{ fontSize: 11 }} unit="%" />
+                    <YAxis
+                      dataKey="division"
+                      type="category"
+                      tick={{ fontSize: 11, fontWeight: 600, fill: '#1e293b' }}
+                      width={210}
+                    />
+                    <Tooltip
+                      cursor={false}
+                      formatter={(v: number) => [`${v.toFixed(1)}%`, metric === 'mensual' ? 'Mensual' : 'Interanual']}
+                    />
+                    <Bar
+                      dataKey={metric === 'mensual' ? 'var_mensual' : 'var_interanual'}
+                      barSize={16}
+                      radius={[0, 6, 6, 0]}
                     >
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-                      <XAxis type="number" tick={{ fontSize: 11 }} unit="%" />
-                      <YAxis dataKey="division" type="category" tick={{ fontSize: 11, fontWeight: 600 }} />
-                      <Tooltip formatter={(v: number) => [`${v.toFixed(1)}%`, metric === 'mensual' ? 'Mensual' : 'Interanual']} />
-                      <Bar dataKey={metric === 'mensual' ? 'var_mensual' : 'var_interanual'} radius={[0, 6, 6, 0]}>
-                        {chartDataAperturas.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={entry.division.toLowerCase().includes('nivel general') ? '#14203b' : '#84cc16'}
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
+                      {chartDataAperturas.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={norm(entry.division).includes('GENERAL') ? '#14203b' : '#84cc16'}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
 
-                {/* 3. TABLA SUBDIVISIONES */}
-                {activeTab === 'subdivisiones' && (
-                  <div className={styles.tableWrapper}>
-                    <table className={styles.table}>
-                      <thead>
-                        <tr>
-                          <th>Categoría / División</th>
-                          <th style={{ textAlign: 'right' }}>Variación mensual</th>
-                          <th style={{ textAlign: 'right' }}>Variación interanual</th>
+              {/* 3. SUBDIVISIONES */}
+              {activeTab === 'subdivisiones' && (
+                <div className={styles.tableWrapper}>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>Categoría / División</th>
+                        <th style={{ textAlign: 'right' }}>Variación mensual</th>
+                        <th style={{ textAlign: 'right' }}>Variación interanual</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {chartDataAperturas.map((row, idx) => (
+                        <tr key={idx}>
+                          <td style={{ fontWeight: norm(row.division).includes('GENERAL') ? 800 : 600 }}>
+                            {row.division}
+                          </td>
+                          <td style={{ textAlign: 'right', fontWeight: 700, color: '#15803d' }}>
+                            {row.var_mensual ? `${row.var_mensual.toFixed(1)}%` : '-'}
+                          </td>
+                          <td style={{ textAlign: 'right', fontWeight: 700, color: '#1e293b' }}>
+                            {row.var_interanual ? `${row.var_interanual.toFixed(1)}%` : '-'}
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {chartDataAperturas.map((row, idx) => (
-                          <tr key={idx}>
-                            <td style={{ fontWeight: row.division.toLowerCase().includes('general') ? 800 : 500 }}>
-                              {row.division}
-                            </td>
-                            <td style={{ textAlign: 'right', fontWeight: 700, color: '#15803d' }}>
-                              {row.var_mensual ? `${row.var_mensual.toFixed(1)}%` : '-'}
-                            </td>
-                            <td style={{ textAlign: 'right', fontWeight: 700, color: '#1e293b' }}>
-                              {row.var_interanual ? `${row.var_interanual.toFixed(1)}%` : '-'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
           <p className={styles.footerNote}>Fuente: INDEC — Instituto Nacional de Estadística y Censos.</p>
         </div>
 
-        {/* Panel Lateral de KPIs */}
+        {/* KPIs Lateral */}
         <div className={styles.kpiColumn}>
           <div className={styles.dateDisplay}>
             {selectedRegion} {formatFechaLabel(selectedFecha)}
@@ -362,7 +399,6 @@ export default function IpcPage() {
             </div>
           </div>
 
-          {/* Card Top Rubros Aumento (Visible en Aperturas) */}
           {activeTab === 'aperturas' && (
             <div className={styles.kpiCard}>
               <div className={styles.kpiTitle}>Rubros con mayor aumento mensual</div>
@@ -388,7 +424,7 @@ export default function IpcPage() {
               {activeTab === 'aperturas' && 'Ver subdivisiones IPC'}
               {activeTab === 'subdivisiones' && 'Ver Serie histórica'}
             </span>
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight size={18} />
           </button>
         </div>
       </div>

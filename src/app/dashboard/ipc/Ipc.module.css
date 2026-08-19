@@ -1,8 +1,8 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  max-width: 1450px;
+  gap: 16px;
+  max-width: 1550px;
   margin: 0 auto;
 }
 
@@ -12,7 +12,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
-  padding-bottom: 14px;
+  padding-bottom: 12px;
   border-bottom: 2px solid #cbd5e1;
 }
 
@@ -66,7 +66,7 @@
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 8px 14px;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: #1e293b;
   cursor: pointer;
@@ -83,12 +83,13 @@
 .chartCard {
   background: #ffffff;
   border-radius: 20px;
-  padding: 26px;
+  padding: 24px 28px;
   border: 1px solid #cbd5e1;
   box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+  min-height: 540px;
 }
 
 .chartHeader {
@@ -96,7 +97,7 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 14px;
 }
 
 .badgeCategory {
@@ -149,28 +150,24 @@
   color: #ffffff;
 }
 
-.chartScrollArea {
-  width: 100%;
-  overflow-x: auto;
-  padding-bottom: 8px;
-}
-
 .chartCanvas {
-  min-width: 850px;
+  width: 100%;
   height: 480px;
 }
 
-/* TABLA SUBDIVISIONES */
+/* TABLA SUBDIVISIONES (UNA SOLA BARRA DE SCROLL LIMPIA) */
 .tableWrapper {
-  overflow-x: auto;
-  max-height: 480px;
+  width: 100%;
+  max-height: 460px;
   overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   text-align: left;
 }
 
@@ -179,25 +176,27 @@
   top: 0;
   background-color: #14203b;
   color: #ffffff;
-  padding: 12px 14px;
-  font-size: 0.8rem;
+  padding: 14px 18px;
+  font-size: 0.82rem;
   font-weight: 700;
+  z-index: 1;
 }
 
 .table tbody td {
-  padding: 12px 14px;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 12px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
 }
 
-.table tbody tr:hover {
-  background-color: #f8fafc;
+.table tbody tr:last-child td {
+  border-bottom: none;
 }
 
-/* KPIS LATERALES */
+/* KPI COLUMNA */
 .kpiColumn {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .dateDisplay {
@@ -214,15 +213,8 @@
   box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
 }
 
-.kpiTitle {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #1e2d4a;
-  margin-bottom: 12px;
-}
-
 .kpiItem {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .kpiItem:last-child {
@@ -230,15 +222,24 @@
 }
 
 .kpiVal {
-  font-size: 1.8rem;
+  font-size: 1.9rem;
   font-weight: 800;
   color: #0f172a;
+  line-height: 1.1;
 }
 
 .kpiLabel {
   font-size: 0.8rem;
   color: #64748b;
-  font-weight: 500;
+  font-weight: 600;
+  margin-top: 3px;
+}
+
+.kpiTitle {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e2d4a;
+  margin-bottom: 12px;
 }
 
 .topIncItem {
@@ -247,7 +248,7 @@
   align-items: center;
   padding: 8px 0;
   border-bottom: 1px solid #f1f5f9;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
 }
 
 .topIncItem:last-child {
@@ -257,6 +258,10 @@
 .topIncName {
   font-weight: 600;
   color: #334155;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .topIncVal {
@@ -277,7 +282,7 @@
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .navBottomBtn:hover {
@@ -287,7 +292,7 @@
 .footerNote {
   font-size: 0.78rem;
   color: #64748b;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 @media (max-width: 1024px) {

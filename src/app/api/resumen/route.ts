@@ -20,9 +20,9 @@ export async function GET(request: NextRequest) {
       SELECT 
         TO_CHAR(i.fecha, 'YYYY-MM-DD') as fecha,
         COALESCE(r.nombre_region, 'Nacion') as region,
-        i.var_mensual,
-        i.var_interanual,
-        i.var_acumulada
+        COALESCE(i.var_mensual, 0) as var_mensual,
+        COALESCE(i.var_interanual, 0) as var_interanual,
+        COALESCE(i.var_acumulada, 0) as var_acumulada
       FROM ipc i
       LEFT JOIN dicc_region r ON i.id_region = r.id_region
       WHERE (i.id_division = 0 OR i.id_division IS NULL)
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       ORDER BY fecha ASC;
     `;
 
-    // 3. SIPA
+    // 3. SIPA (Nación y Corrientes)
     const qSipa = `
       WITH sipa_ctes AS (
         SELECT 
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       ORDER BY fecha ASC;
     `;
 
-    // 4. SRT
+    // 4. SRT (Nación y Corrientes)
     const qSrt = `
       WITH srt_ctes AS (
         SELECT 
@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
       ORDER BY fecha ASC;
     `;
 
-    // 6. IPI Manufacturero
+    // 6. IPI Nación
     const qIpi = `
       SELECT 
         TO_CHAR(fecha, 'YYYY-MM-DD') as fecha,
@@ -133,7 +133,17 @@ export async function GET(request: NextRequest) {
       ORDER BY fecha ASC;
     `;
 
-    // 7. IERIC (NEA y Corrientes con puestos y empresas)
+    // 7. IPICorr (Corrientes)
+    const qIpicorr = `
+      SELECT 
+        TO_CHAR(fecha, 'YYYY-MM-DD') as fecha,
+        vim_nivel_general as var_mensual,
+        var_ia_nivel_general as var_interanual
+      FROM ipicorr
+      ORDER BY fecha ASC;
+    `;
+
+    // 8. IERIC (NEA y Corrientes con puestos y empresas)
     const qIeric = `
       WITH ieric_ctes AS (
         SELECT 
@@ -169,7 +179,7 @@ export async function GET(request: NextRequest) {
       ORDER BY fecha ASC;
     `;
 
-    const [rIpc, rCbtCba, rSipa, rSrt, rRipte, rSmvm, rIpi, rIeric] = await Promise.all([
+    const [rIpc, rCbtCba, rSipa, rSrt, rRipte, rSmvm, rIpi, rIpicorr, rIeric] = await Promise.all([
       client.query(qIpc),
       client.query(qCbtCba),
       client.query(qSipa),
@@ -177,6 +187,7 @@ export async function GET(request: NextRequest) {
       client.query(qRipte),
       client.query(qSmvm),
       client.query(qIpi),
+      client.query(qIpicorr),
       client.query(qIeric),
     ]);
 
@@ -190,12 +201,13 @@ export async function GET(request: NextRequest) {
       ripte: rRipte.rows,
       smvm: rSmvm.rows,
       ipi: rIpi.rows,
+      ipicorr: rIpicorr.rows,
       ieric: rIeric.rows,
     });
   } catch (error: any) {
     console.error('Error en /api/resumen:', error);
     return NextResponse.json(
-      { error: 'Error al consultar resumen', details: error.message },
+      { error: 'Error al consultar datos de resumen', details: error.message },
       { status: 500 }
     );
   }

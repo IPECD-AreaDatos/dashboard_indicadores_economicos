@@ -70,33 +70,46 @@ export default function IndicadoresPaisPage() {
       return selectedYear === 'TODOS' || yearStr === selectedYear;
     });
 
-    const formatted = filtered.map((row) => {
-      const dateParts = row.fecha.split('-');
-      const yearShort = dateParts[0] ? dateParts[0].slice(-2) : '';
-      const monthNum = parseInt(dateParts[1], 10);
-      const monthsEs = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-      const monthLabel = monthsEs[monthNum - 1] || 'mes';
+    const monthMap: { [key: string]: any } = {};
 
-      const point: any = {
-        fechaLabel: `${monthLabel}-${yearShort}`,
-      };
+    filtered.forEach((row) => {
+      const monthKey = row.fecha ? row.fecha.substring(0, 7) : '';
+      if (!monthKey) return;
+
+      if (!monthMap[monthKey]) {
+        const dateParts = monthKey.split('-');
+        const yearShort = dateParts[0] ? dateParts[0].slice(-2) : '';
+        const monthNum = parseInt(dateParts[1], 10);
+        const monthsEs = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const monthLabel = monthsEs[monthNum - 1] || 'mes';
+
+        monthMap[monthKey] = {
+          fechaKey: monthKey,
+          fechaLabel: `${monthLabel}-${yearShort}`,
+        };
+      }
 
       AVAILABLE_INDICATORS.forEach((ind) => {
         let val: number | null = null;
         if (viewMode === 'montos') {
-          val = Number(row[ind.valKey]) || null;
+          val = row[ind.valKey] !== null && row[ind.valKey] !== undefined ? Number(row[ind.valKey]) : null;
         } else if (viewMode === 'mensual') {
-          val = Number(row[ind.menKey]) || null;
+          val = row[ind.menKey] !== null && row[ind.menKey] !== undefined ? Number(row[ind.menKey]) : null;
         } else {
-          val = Number(row[ind.iaKey]) || null;
+          val = row[ind.iaKey] !== null && row[ind.iaKey] !== undefined ? Number(row[ind.iaKey]) : null;
         }
-        point[ind.key] = val;
-      });
 
-      return point;
+        if (val !== null || monthMap[monthKey][ind.key] === undefined) {
+          monthMap[monthKey][ind.key] = val;
+        }
+      });
     });
 
-    setChartData(formatted);
+    const sortedPoints = Object.keys(monthMap)
+      .sort()
+      .map((k) => monthMap[k]);
+
+    setChartData(sortedPoints);
   }, [rawRows, viewMode, selectedYear]);
 
   const toggleIndicator = (key: string) => {
@@ -123,7 +136,6 @@ export default function IndicadoresPaisPage() {
       </div>
 
       <div className={styles.mainGrid}>
-        {/* Gráfico Recharts */}
         <div className={styles.chartCard}>
           <div className={styles.chartHeader}>
             <div className={styles.viewModeControls}>
@@ -185,7 +197,9 @@ export default function IndicadoresPaisPage() {
                         name={ind.label}
                         stroke={ind.color}
                         strokeWidth={2.5}
-                        dot={{ r: 3.5, fill: ind.color }}
+                        connectNulls={true}
+                        dot={{ r: 4, fill: ind.color }}
+                        activeDot={{ r: 6 }}
                       />
                     ))}
                   </LineChart>
@@ -199,7 +213,7 @@ export default function IndicadoresPaisPage() {
           </p>
         </div>
 
-        {/* Panel Lateral de Selección de Indicadores */}
+        {/* Panel Lateral */}
         <div className={styles.indicatorsCard}>
           <div className={styles.badgeIndicators}>Indicadores</div>
           <div className={styles.indicatorsList}>
