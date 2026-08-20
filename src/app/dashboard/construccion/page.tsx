@@ -1,5 +1,6 @@
 'use client';
 
+import { withBasePath } from '../../../lib/basePath';
 import { useEffect, useState } from 'react';
 import {
   LineChart,
@@ -43,7 +44,7 @@ export default function ConstruccionPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch('/api/construccion');
+        const res = await fetch(withBasePath('/api/construccion'));
         const json = await res.json();
 
         if (json.serie && json.serie.length > 0) {

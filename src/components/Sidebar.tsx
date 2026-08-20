@@ -1,5 +1,6 @@
 'use client';
 
+import { withBasePath } from '../lib/basePath';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -19,7 +20,7 @@ import {
 interface NavItem {
   href: string;
   label: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ComponentType<{ size?: number | string; className?: string }>;
 }
 
 interface NavGroup {
@@ -52,7 +53,7 @@ const navigationGroups: NavGroup[] = [
   {
     title: 'SECTOR PRODUCTIVO Y ACTIVIDAD',
     items: [
-      { href: '/dashboard/ipi', label: 'Industria y Actividad', icon: Factory },
+      { href: '/dashboard/industria', label: 'Industria y Actividad', icon: Factory },
       { href: '/dashboard/pbg', label: 'Producto Bruto (PBG)', icon: PieChart },
       { href: '/dashboard/construccion', label: 'Construcción (IERIC)', icon: Hammer },
     ],
@@ -68,7 +69,7 @@ export default function Sidebar() {
       <div className="sidebar-header">
         <div className="sidebar-logo-container">
           <Image
-            src="/images/logo_sidebar.png"
+            src={withBasePath("/images/logo_sidebar.png")}
             alt="Instituto de Modernización e Innovación — Corrientes"
             width={180}
             height={50}

@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import { withBasePath } from '../../lib/basePath';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { // Corregido: LayoutDashboard no existe, se reemplaza por LayoutGrid
@@ -67,12 +67,11 @@ export default function Sidebar() {
       {/* Header del Sidebar */}
       <div className="sidebar-header">
         <div className="sidebar-logo-container">
-          <Image
-            src="/images/logo_pluma_blanca.png"
+          <img
+            src={withBasePath("/images/logo_pluma_blanca.png")}
             alt="Logo IPECD Corrientes"
             width={200}
             height={60}
-            priority
             className="sidebar-logo-img"
           />
         </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { withBasePath } from '../../../lib/basePath';
 import { useEffect, useState } from 'react';
 import {
   LineChart,
@@ -58,7 +59,7 @@ export default function EmpleoNacionalPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch('/api/empleo_nacional');
+        const res = await fetch(withBasePath('/api/empleo_nacional'));
         const json = await res.json();
 
         if (json.serieProvincias) {

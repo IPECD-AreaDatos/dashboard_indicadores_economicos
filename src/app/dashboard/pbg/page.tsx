@@ -1,5 +1,6 @@
 'use client';
 
+import { withBasePath } from '../../../lib/basePath';
 import { useEffect, useState } from 'react';
 import {
   LineChart,
@@ -24,7 +25,7 @@ export default function PbgPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch('/api/pbg');
+        const res = await fetch(withBasePath('/api/pbg'));
         const json = await res.json();
 
         if (json.anual) {

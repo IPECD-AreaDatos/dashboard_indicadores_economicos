@@ -1,5 +1,6 @@
 'use client';
 
+import { withBasePath } from '../../../lib/basePath';
 import { useEffect, useState } from 'react';
 import styles from './Semaforo.module.css';
 
@@ -25,7 +26,7 @@ export default function SemaforoPage() {
     async function fetchData() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/semaforo?tipo=${tipo}`);
+        const res = await fetch(withBasePath(`/api/semaforo?tipo=${tipo}`));
         const json = await res.json();
         if (Array.isArray(json)) {
           setData(json); // Carga todo el historial

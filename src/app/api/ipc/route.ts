@@ -40,11 +40,10 @@ export async function GET(request: NextRequest) {
       FROM ipc i
       LEFT JOIN dicc_region r ON i.id_region = r.id_region
       LEFT JOIN ipc_division div ON i.id_division = div.id_division
-      WHERE (i.id_subdivision IS NULL OR i.id_subdivision = 0)
-        AND (
-          i.id_division IS NULL 
-          OR i.id_division = 0 
-          OR LOWER(COALESCE(div.nombre, '')) LIKE '%general%'
+      WHERE (
+          i.id_division = 1
+          OR LOWER(COALESCE(div.nombre, '')) LIKE '%nivel general%'
+          OR LOWER(COALESCE(div.nombre, '')) = 'nivel general'
         )
       ORDER BY i.fecha ASC;
     `;

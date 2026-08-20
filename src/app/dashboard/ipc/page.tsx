@@ -1,5 +1,6 @@
 'use client';
 
+import { withBasePath } from '../../../lib/basePath';
 import { useEffect, useState } from 'react';
 import {
   LineChart,
@@ -44,7 +45,7 @@ export default function IpcPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch('/api/ipc');
+        const res = await fetch(withBasePath('/api/ipc'));
         const json = await res.json();
 
         if (json.serieGeneral) {

@@ -25,7 +25,11 @@ export async function GET(request: NextRequest) {
         COALESCE(i.var_acumulada, 0) as var_acumulada
       FROM ipc i
       LEFT JOIN dicc_region r ON i.id_region = r.id_region
-      WHERE (i.id_division = 0 OR i.id_division IS NULL)
+      LEFT JOIN ipc_division div ON i.id_division = div.id_division
+      WHERE (
+        i.id_division = 1
+        OR LOWER(COALESCE(div.nombre, '')) LIKE '%nivel general%'
+      )
       ORDER BY i.fecha ASC;
     `;
 

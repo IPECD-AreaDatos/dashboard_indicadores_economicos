@@ -1,5 +1,6 @@
 'use client';
 
+import { withBasePath } from '../../../lib/basePath';
 import { useEffect, useState } from 'react';
 import {
   LineChart,
@@ -48,7 +49,7 @@ export default function IndicadoresPaisPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch('/api/indicadores_pais');
+        const res = await fetch(withBasePath('/api/indicadores_pais'));
         const json = await res.json();
         if (Array.isArray(json)) {
           setRawRows(json);

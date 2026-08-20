@@ -1,5 +1,6 @@
 'use client';
 
+import { withBasePath } from '../../../lib/basePath';
 import { useEffect, useState } from 'react';
 import {
   BarChart,
@@ -35,7 +36,9 @@ export default function EmpleoProvincialPage() {
     async function loadData() {
       setLoading(true);
       try {
-        const url = selectedFecha ? `/api/srt?fecha=${selectedFecha}` : '/api/empleo_provincial';
+        const url = selectedFecha
+          ? withBasePath(`/api/empleo_provincial?fecha=${selectedFecha}`)
+          : withBasePath('/api/empleo_provincial');
         const res = await fetch(url);
         const json = await res.json();
 

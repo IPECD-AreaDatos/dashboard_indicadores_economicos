@@ -1,5 +1,6 @@
 'use client';
 
+import { withBasePath } from '../../lib/basePath';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
@@ -23,7 +24,7 @@ export default function ResumenPrincipalPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch('/api/resumen');
+        const res = await fetch(withBasePath('/api/resumen'));
         const json = await res.json();
         setData(json);
       } catch (err) {
