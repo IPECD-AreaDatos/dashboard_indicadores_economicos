@@ -17,6 +17,46 @@ import {
 } from 'lucide-react';
 import styles from './Resumen.module.css';
 
+// Componente para renderizar el logo circular del mapa con tooltip
+function MapLogo({ type }: { type: 'pais' | 'nea' | 'corrientes' }) {
+  const mapConfig = {
+    pais: {
+      src: withBasePath('/images/Argentina.jpg.jpeg'),
+      label: 'Nivel País (Nacional)',
+    },
+    nea: {
+      src: withBasePath('/images/NEA.jpg.jpeg'),
+      label: 'Región NEA',
+    },
+    corrientes: {
+      src: withBasePath('/images/Corrientes.jpg.jpeg'),
+      label: 'Provincia de Corrientes',
+    },
+  };
+
+  const item = mapConfig[type];
+
+  return (
+    <div className={styles.mapIconCircle}>
+      <div className={styles.mapImgWrapper}>
+        <img
+          src={item.src}
+          alt={type}
+          className={styles.mapImg}
+        />
+      </div>
+      <span className={styles.mapTooltip}>{item.label}</span>
+    </div>
+  );
+}
+
+// Colores institucionales sincronizados con los logos
+const COLORS = {
+  pais: '#0284c7',       // Azul Argentina
+  nea: '#15803d',        // Verde Bosque NEA
+  corrientes: '#84cc16', // Verde Claro Corrientes
+};
+
 export default function ResumenPrincipalPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -42,6 +82,15 @@ export default function ResumenPrincipalPage() {
     if (parts.length < 2) return fStr;
     const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     return `${months[parseInt(parts[1], 10) - 1]}-${parts[0].slice(-2)}`;
+  };
+
+  const formatPct = (val?: number | string | null) => {
+    if (val === undefined || val === null) return '0,0%';
+    let num = Number(val);
+    if (Math.abs(num) < 1 && num !== 0) {
+      num = num * 100;
+    }
+    return `${num.toFixed(1).replace('.', ',')}%`;
   };
 
   // 1. PRECIOS & CANASTAS
@@ -135,29 +184,29 @@ export default function ResumenPrincipalPage() {
             <div className={styles.cardBody}>
               {/* 1. IPC Nación */}
               <div className={styles.indicatorRow}>
-                <div className={styles.mapIconCircle}>PAÍS</div>
+                <MapLogo type="pais" />
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
-                    {lastIpcNac?.var_acumulada ? `${Number(lastIpcNac.var_acumulada).toFixed(1)}%` : '14,7%'}
+                    {formatPct(lastIpcNac?.var_acumulada)}
                   </div>
                   <div className={styles.metricLabel}>IPC Acumulado</div>
                 </div>
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
-                    {lastIpcNac?.var_interanual ? `${Number(lastIpcNac.var_interanual).toFixed(1)}%` : '33,2%'}
+                    {formatPct(lastIpcNac?.var_interanual)}
                   </div>
                   <div className={styles.metricLabel}>Interanual</div>
                 </div>
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
-                    {lastIpcNac?.var_mensual ? `${Number(lastIpcNac.var_mensual).toFixed(1)}%` : '2,1%'}
+                    {formatPct(lastIpcNac?.var_mensual)}
                   </div>
                   <div className={styles.metricLabel}>Mensual</div>
                 </div>
                 <div className={styles.sparklineContainer}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={ipcNacSeries.slice(-12)}>
-                      <Line type="monotone" dataKey="var_mensual" stroke="#0284c7" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="var_mensual" stroke={COLORS.pais} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -168,29 +217,29 @@ export default function ResumenPrincipalPage() {
 
               {/* 2. IPC NEA */}
               <div className={styles.indicatorRow}>
-                <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>NEA</div>
+                <MapLogo type="nea" />
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
-                    {lastIpcNea?.var_acumulada ? `${Number(lastIpcNea.var_acumulada).toFixed(1)}%` : '17,6%'}
+                    {formatPct(lastIpcNea?.var_acumulada)}
                   </div>
                   <div className={styles.metricLabel}>IPC Acumulado</div>
                 </div>
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
-                    {lastIpcNea?.var_interanual ? `${Number(lastIpcNea.var_interanual).toFixed(1)}%` : '35,3%'}
+                    {formatPct(lastIpcNea?.var_interanual)}
                   </div>
                   <div className={styles.metricLabel}>Interanual</div>
                 </div>
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
-                    {lastIpcNea?.var_mensual ? `${Number(lastIpcNea.var_mensual).toFixed(1)}%` : '2,6%'}
+                    {formatPct(lastIpcNea?.var_mensual)}
                   </div>
                   <div className={styles.metricLabel}>Mensual</div>
                 </div>
                 <div className={styles.sparklineContainer}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={ipcNeaSeries.slice(-12)}>
-                      <Line type="monotone" dataKey="var_mensual" stroke="#84cc16" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="var_mensual" stroke={COLORS.nea} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -199,31 +248,35 @@ export default function ResumenPrincipalPage() {
                 </Link>
               </div>
 
-              {/* 3. CBT Hogar */}
+              {/* 3. CBA NEA */}
               <div className={styles.indicatorRow}>
-                <div className={styles.mapIconCircle}>CBT</div>
+                <MapLogo type="nea" />
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
-                    ${lastCbtCba?.cbt_hogar ? Math.round(Number(lastCbtCba.cbt_hogar)).toLocaleString('es-AR') : '1.564.716'}
+                    ${lastCbtCba?.cba_nea !== undefined ? Math.round(Number(lastCbtCba.cba_nea)).toLocaleString('es-AR') : '-'}
                   </div>
-                  <div className={styles.metricLabel}>CBT Hogar</div>
+                  <div className={styles.metricLabel}>CBA NEA</div>
                 </div>
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
-                    {lastCbtCba?.cbt_ia ? `${Number(lastCbtCba.cbt_ia).toFixed(1)}%` : '36,1%'}
+                    {lastCbtCba?.cba_ia !== undefined && lastCbtCba?.cba_ia !== null
+                      ? `${Number(lastCbtCba.cba_ia).toFixed(1).replace('.', ',')}%`
+                      : '-'}
                   </div>
                   <div className={styles.metricLabel}>Interanual</div>
                 </div>
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
-                    {lastCbtCba?.cbt_men ? `${Number(lastCbtCba.cbt_men).toFixed(1)}%` : '2,2%'}
+                    {lastCbtCba?.cba_men !== undefined && lastCbtCba?.cba_men !== null
+                      ? `${Number(lastCbtCba.cba_men).toFixed(1).replace('.', ',')}%`
+                      : '-'}
                   </div>
-                  <div className={styles.metricLabel}>CBT m.m.</div>
+                  <div className={styles.metricLabel}>CBA m.m.</div>
                 </div>
                 <div className={styles.sparklineContainer}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={cbtCbaRows.slice(-12)}>
-                      <Line type="monotone" dataKey="cbt_men" stroke="#0284c7" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="cba_men" stroke={COLORS.nea} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -232,31 +285,35 @@ export default function ResumenPrincipalPage() {
                 </Link>
               </div>
 
-              {/* 4. CBA Hogar */}
+              {/* 4. CBT NEA */}
               <div className={styles.indicatorRow}>
-                <div className={styles.mapIconCircle}>CBA</div>
+                <MapLogo type="nea" />
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
-                    ${lastCbtCba?.cba_hogar ? Math.round(Number(lastCbtCba.cba_hogar)).toLocaleString('es-AR') : '708.016'}
+                    ${lastCbtCba?.cbt_nea !== undefined ? Math.round(Number(lastCbtCba.cbt_nea)).toLocaleString('es-AR') : '-'}
                   </div>
-                  <div className={styles.metricLabel}>CBA Hogar</div>
+                  <div className={styles.metricLabel}>CBT NEA</div>
                 </div>
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
-                    {lastCbtCba?.cba_ia ? `${Number(lastCbtCba.cba_ia).toFixed(1)}%` : '37,4%'}
+                    {lastCbtCba?.cbt_ia !== undefined && lastCbtCba?.cbt_ia !== null
+                      ? `${Number(lastCbtCba.cbt_ia).toFixed(1).replace('.', ',')}%`
+                      : '-'}
                   </div>
                   <div className={styles.metricLabel}>Interanual</div>
                 </div>
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
-                    {lastCbtCba?.cba_men ? `${Number(lastCbtCba.cba_men).toFixed(1)}%` : '2,6%'}
+                    {lastCbtCba?.cbt_men !== undefined && lastCbtCba?.cbt_men !== null
+                      ? `${Number(lastCbtCba.cbt_men).toFixed(1).replace('.', ',')}%`
+                      : '-'}
                   </div>
-                  <div className={styles.metricLabel}>CBA m.m.</div>
+                  <div className={styles.metricLabel}>CBT m.m.</div>
                 </div>
                 <div className={styles.sparklineContainer}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={cbtCbaRows.slice(-12)}>
-                      <Line type="monotone" dataKey="cba_men" stroke="#84cc16" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="cbt_men" stroke={COLORS.nea} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -282,7 +339,7 @@ export default function ResumenPrincipalPage() {
             <div className={styles.cardBody}>
               {/* 1. SIPA Nación */}
               <div className={styles.indicatorRow}>
-                <div className={styles.mapIconCircle}>PAÍS</div>
+                <MapLogo type="pais" />
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
                     {formatSipaNacion(lastSipaNac?.puestos)}
@@ -304,7 +361,7 @@ export default function ResumenPrincipalPage() {
                 <div className={styles.sparklineContainer}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={sipaNacSeries.slice(-12)}>
-                      <Line type="monotone" dataKey="puestos" stroke="#0284c7" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="puestos" stroke={COLORS.pais} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -315,7 +372,7 @@ export default function ResumenPrincipalPage() {
 
               {/* 2. SIPA Corrientes */}
               <div className={styles.indicatorRow}>
-                <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>CTES</div>
+                <MapLogo type="corrientes" />
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
                     {formatSipaCtes(lastSipaCtes?.puestos)}
@@ -337,7 +394,7 @@ export default function ResumenPrincipalPage() {
                 <div className={styles.sparklineContainer}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={sipaCtesSeries.slice(-12)}>
-                      <Line type="monotone" dataKey="puestos" stroke="#84cc16" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="puestos" stroke={COLORS.corrientes} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -348,7 +405,7 @@ export default function ResumenPrincipalPage() {
 
               {/* 3. SRT Nación */}
               <div className={styles.indicatorRow}>
-                <div className={styles.mapIconCircle}>PAÍS</div>
+                <MapLogo type="pais" />
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
                     {lastSrtNac?.trabajadores ? `${(Number(lastSrtNac.trabajadores) / 1000000).toFixed(1)} mill.` : '10,0 mill.'}
@@ -368,7 +425,7 @@ export default function ResumenPrincipalPage() {
                 <div className={styles.sparklineContainer}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={srtNacSeries.slice(-12)}>
-                      <Line type="monotone" dataKey="trabajadores" stroke="#0284c7" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="trabajadores" stroke={COLORS.pais} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -379,7 +436,7 @@ export default function ResumenPrincipalPage() {
 
               {/* 4. SRT Corrientes */}
               <div className={styles.indicatorRow}>
-                <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>CTES</div>
+                <MapLogo type="corrientes" />
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
                     {lastSrtCtes?.trabajadores ? `${(Number(lastSrtCtes.trabajadores) / 1000).toFixed(1)} mil` : '170,2 mil'}
@@ -399,7 +456,7 @@ export default function ResumenPrincipalPage() {
                 <div className={styles.sparklineContainer}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={srtCtesSeries.slice(-12)}>
-                      <Line type="monotone" dataKey="trabajadores" stroke="#84cc16" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="trabajadores" stroke={COLORS.corrientes} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -425,7 +482,7 @@ export default function ResumenPrincipalPage() {
             <div className={styles.cardBody}>
               {/* 1. RIPTE Datos */}
               <div className={styles.indicatorRow}>
-                <div className={styles.mapIconCircle}>PAÍS</div>
+                <MapLogo type="pais" />
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>RIPTE</div>
                   <div className={styles.metricLabel}>{formatMonthLabel(lastRipte?.fecha)}</div>
@@ -453,9 +510,9 @@ export default function ResumenPrincipalPage() {
                 </Link>
               </div>
 
-              {/* 2. RIPTE Tendencia (Sparkline) */}
+              {/* 2. RIPTE Tendencia */}
               <div className={styles.indicatorRow}>
-                <div className={styles.mapIconCircle}>SERIE</div>
+                <MapLogo type="pais" />
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>Tendencia</div>
                   <div className={styles.metricLabel}>RIPTE últimos 12 m.</div>
@@ -464,7 +521,7 @@ export default function ResumenPrincipalPage() {
                   <div style={{ width: '100%', height: '26px' }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={ripteRows.slice(-12)}>
-                        <Line type="monotone" dataKey="var_mensual" stroke="#0284c7" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="var_mensual" stroke={COLORS.pais} strokeWidth={2} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -476,7 +533,7 @@ export default function ResumenPrincipalPage() {
 
               {/* 3. SMVM Datos */}
               <div className={styles.indicatorRow}>
-                <div className={styles.mapIconCircle}>PAÍS</div>
+                <MapLogo type="pais" />
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>SMVM</div>
                   <div className={styles.metricLabel}>{formatMonthLabel(lastSmvm?.fecha)}</div>
@@ -504,9 +561,9 @@ export default function ResumenPrincipalPage() {
                 </Link>
               </div>
 
-              {/* 4. SMVM Tendencia (Sparkline) */}
+              {/* 4. SMVM Tendencia */}
               <div className={styles.indicatorRow}>
-                <div className={styles.mapIconCircle}>SERIE</div>
+                <MapLogo type="pais" />
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>Tendencia</div>
                   <div className={styles.metricLabel}>SMVM últimos 12 m.</div>
@@ -515,7 +572,7 @@ export default function ResumenPrincipalPage() {
                   <div style={{ width: '100%', height: '26px' }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={smvmRows.slice(-12)}>
-                        <Line type="monotone" dataKey="var_mensual" stroke="#84cc16" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="var_mensual" stroke={COLORS.pais} strokeWidth={2} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -526,7 +583,7 @@ export default function ResumenPrincipalPage() {
               </div>
             </div>
           </div>
-          
+
           {/* ========================================================================= */}
           {/* CARD 4: INDUSTRIA Y CONSTRUCCIÓN (4 FILAS) */}
           {/* ========================================================================= */}
@@ -542,7 +599,7 @@ export default function ResumenPrincipalPage() {
             <div className={styles.cardBody}>
               {/* 1. IPI Manufacturero País */}
               <div className={styles.indicatorRow}>
-                <div className={styles.mapIconCircle}>IPI</div>
+                <MapLogo type="pais" />
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>Nacional</div>
                   <div className={styles.metricLabel}>IPI Manufacturero</div>
@@ -562,7 +619,7 @@ export default function ResumenPrincipalPage() {
                 <div className={styles.sparklineContainer}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={ipiRows.slice(-12)}>
-                      <Line type="monotone" dataKey="var_mensual" stroke="#0284c7" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="var_mensual" stroke={COLORS.pais} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -573,7 +630,7 @@ export default function ResumenPrincipalPage() {
 
               {/* 2. IPICorr (Corrientes) */}
               <div className={styles.indicatorRow}>
-                <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>CTES</div>
+                <MapLogo type="corrientes" />
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>IPICorr</div>
                   <div className={styles.metricLabel}>{formatMonthLabel(lastIpicorr?.fecha)}</div>
@@ -593,7 +650,7 @@ export default function ResumenPrincipalPage() {
                 <div className={styles.sparklineContainer}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={ipicorrRows.slice(-12)}>
-                      <Line type="monotone" dataKey="var_mensual" stroke="#84cc16" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="var_mensual" stroke={COLORS.corrientes} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -604,7 +661,7 @@ export default function ResumenPrincipalPage() {
 
               {/* 3. IERIC Construcción NEA */}
               <div className={styles.indicatorRow}>
-                <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>NEA</div>
+                <MapLogo type="nea" />
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
                     {lastIericNea?.puestos ? Number(lastIericNea.puestos).toLocaleString('es-AR') : '15.439.415'}
@@ -626,7 +683,7 @@ export default function ResumenPrincipalPage() {
                 <div className={styles.sparklineContainer}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={iericNeaSeries.slice(-12)}>
-                      <Line type="monotone" dataKey="puestos_ia" stroke="#84cc16" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="puestos_ia" stroke={COLORS.nea} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -637,7 +694,7 @@ export default function ResumenPrincipalPage() {
 
               {/* 4. IERIC Construcción Corrientes */}
               <div className={styles.indicatorRow}>
-                <div className={`${styles.mapIconCircle} ${styles.mapIconCorrientes}`}>CTES</div>
+                <MapLogo type="corrientes" />
                 <div className={styles.metricCol}>
                   <div className={styles.metricVal}>
                     {lastIericCtes?.puestos ? Number(lastIericCtes.puestos).toLocaleString('es-AR') : '3.793.071'}
@@ -659,7 +716,7 @@ export default function ResumenPrincipalPage() {
                 <div className={styles.sparklineContainer}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={iericCtesSeries.slice(-12)}>
-                      <Line type="monotone" dataKey="puestos_ia" stroke="#84cc16" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="puestos_ia" stroke={COLORS.corrientes} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>

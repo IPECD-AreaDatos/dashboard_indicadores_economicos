@@ -39,7 +39,7 @@
   border-radius: 18px;
   border: 1px solid #cbd5e1;
   box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -53,6 +53,8 @@
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
+  border-top-left-radius: 17px;
+  border-top-right-radius: 17px;
 }
 
 .cardTitle {
@@ -78,6 +80,7 @@
   flex: 1;
   gap: 4px;
   min-height: 0;
+  overflow: visible;
 }
 
 .indicatorRow {
@@ -89,17 +92,77 @@
 }
 
 .mapIconCircle {
+  position: relative;
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background-color: #0284c7;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
-  font-weight: 800;
-  font-size: 0.65rem;
   flex-shrink: 0;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.mapImgWrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  background-color: #f8fafc;
+}
+
+.mapImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Tooltip flotante nativo CSS */
+.mapTooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0; /* Anclado al borde izquierdo del círculo para que no se corte contra el marco de la pantalla */
+  background-color: #0f172a;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  padding: 5px 10px;
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  transform: translateY(4px);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.mapTooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 14px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #0f172a transparent transparent transparent;
+}
+
+.mapIconCircle:hover {
+  z-index: 999; /* Trae el círculo activo y su tooltip al frente absoluto */
+}
+
+.mapIconCircle:hover .mapTooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .mapIconCorrientes {

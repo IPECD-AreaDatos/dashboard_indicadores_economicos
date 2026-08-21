@@ -20,29 +20,42 @@ export async function GET(request: NextRequest) {
       SELECT 
         TO_CHAR(i.fecha, 'YYYY-MM-DD') as fecha,
         COALESCE(r.nombre_region, 'Nacion') as region,
-        COALESCE(i.var_mensual, 0) as var_mensual,
-        COALESCE(i.var_interanual, 0) as var_interanual,
-        COALESCE(i.var_acumulada, 0) as var_acumulada
+        CASE 
+          WHEN ABS(COALESCE(i.var_mensual, 0)) < 1 AND COALESCE(i.var_mensual, 0) != 0 
+          THEN ROUND((i.var_mensual * 100)::numeric, 1)
+          ELSE ROUND(COALESCE(i.var_mensual, 0)::numeric, 1)
+        END as var_mensual,
+        CASE 
+          WHEN ABS(COALESCE(i.var_interanual, 0)) < 1 AND COALESCE(i.var_interanual, 0) != 0 
+          THEN ROUND((i.var_interanual * 100)::numeric, 1)
+          ELSE ROUND(COALESCE(i.var_interanual, 0)::numeric, 1)
+        END as var_interanual,
+        CASE 
+          WHEN ABS(COALESCE(i.var_acumulada, 0)) < 1 AND COALESCE(i.var_acumulada, 0) != 0 
+          THEN ROUND((i.var_acumulada * 100)::numeric, 1)
+          ELSE ROUND(COALESCE(i.var_acumulada, 0)::numeric, 1)
+        END as var_acumulada
       FROM ipc i
       LEFT JOIN dicc_region r ON i.id_region = r.id_region
       LEFT JOIN ipc_division div ON i.id_division = div.id_division
       WHERE (
         i.id_division = 1
         OR LOWER(COALESCE(div.nombre, '')) LIKE '%nivel general%'
+        OR i.id_division IS NULL
       )
       ORDER BY i.fecha ASC;
     `;
 
-    // 2. Canastas (CBT y CBA Hogar)
+    // 2. Canastas NEA (CBT y CBA NEA)
     const qCbtCba = `
       SELECT 
         TO_CHAR(fecha, 'YYYY-MM-DD') as fecha,
-        cbt_hogar,
-        cba_hogar,
-        ROUND((((cbt_hogar - LAG(cbt_hogar, 1) OVER (ORDER BY fecha)) / NULLIF(LAG(cbt_hogar, 1) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as cbt_men,
-        ROUND((((cbt_hogar - LAG(cbt_hogar, 12) OVER (ORDER BY fecha)) / NULLIF(LAG(cbt_hogar, 12) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as cbt_ia,
-        ROUND((((cba_hogar - LAG(cba_hogar, 1) OVER (ORDER BY fecha)) / NULLIF(LAG(cba_hogar, 1) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as cba_men,
-        ROUND((((cba_hogar - LAG(cba_hogar, 12) OVER (ORDER BY fecha)) / NULLIF(LAG(cba_hogar, 12) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as cba_ia
+        cbt_nea,
+        cba_nea,
+        ROUND((((cbt_nea - LAG(cbt_nea, 1) OVER (ORDER BY fecha)) / NULLIF(LAG(cbt_nea, 1) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as cbt_men,
+        ROUND((((cbt_nea - LAG(cbt_nea, 12) OVER (ORDER BY fecha)) / NULLIF(LAG(cbt_nea, 12) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as cbt_ia,
+        ROUND((((cba_nea - LAG(cba_nea, 1) OVER (ORDER BY fecha)) / NULLIF(LAG(cba_nea, 1) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as cba_men,
+        ROUND((((cba_nea - LAG(cba_nea, 12) OVER (ORDER BY fecha)) / NULLIF(LAG(cba_nea, 12) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as cba_ia
       FROM cbt_cba
       ORDER BY fecha ASC;
     `;
