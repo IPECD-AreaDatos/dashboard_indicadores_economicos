@@ -149,3 +149,55 @@
   transform: translateX(2px);
   color: #16a34a;
 }
+
+@media (max-width: 1024px) {
+  .container {
+    height: auto;
+    overflow: visible;
+  }
+
+  .gridCards {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .titleGroup h1 {
+    font-size: 1.2rem;
+  }
+
+  .cardHeader {
+    padding: 10px 12px;
+  }
+
+  .cardTitle {
+    font-size: 0.82rem;
+  }
+
+  .cardBody {
+    padding: 10px 12px;
+  }
+
+  .indicatorRow {
+    grid-template-columns: 36px 1fr 1fr 28px;
+    gap: 8px;
+    padding: 6px 0;
+  }
+
+  .indicatorRow > .metricCol:nth-of-type(4) {
+    display: none;
+  }
+
+  .metricVal {
+    font-size: 0.85rem;
+  }
+
+  .metricLabel {
+    font-size: 0.58rem;
+  }
+
+  .sparklineContainer {
+    display: none;
+  }
+}

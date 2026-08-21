@@ -182,4 +182,37 @@
   .mainGrid {
     grid-template-columns: 1fr;
   }
+
+  .chartCard,
+  .kpiCard {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .titleGroup h1 {
+    font-size: 1.3rem;
+  }
+
+  .topControls,
+  .selectFilter {
+    width: 100%;
+  }
+
+  .chartCard,
+  .kpiCard {
+    padding: 16px;
+  }
+
+  .chartCanvas {
+    height: 320px;
+  }
+
+  .tableWrapper {
+    overflow-x: auto;
+  }
+
+  .table {
+    min-width: 560px;
+  }
 }

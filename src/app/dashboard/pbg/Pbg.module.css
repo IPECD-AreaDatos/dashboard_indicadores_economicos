@@ -4,6 +4,7 @@
   gap: 20px;
   max-width: 1450px;
   margin: 0 auto;
+  min-width: 0;
 }
 
 .header {
@@ -67,6 +68,7 @@
   grid-template-columns: 1fr 340px;
   gap: 24px;
   align-items: start;
+  min-width: 0;
 }
 
 .chartCard {
@@ -165,6 +167,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
 }
 
 .desgloseHeader {
@@ -181,13 +184,16 @@
 }
 
 .tableWrapper {
+  width: 100%;
+  min-width: 0;
   overflow-x: auto;
   max-height: 350px;
   overflow-y: auto;
 }
 
 .table {
-  width: 100%;
+  width: max-content;
+  min-width: 560px;
   border-collapse: collapse;
   font-size: 0.82rem;
   text-align: left;
@@ -220,5 +226,34 @@
 @media (max-width: 1024px) {
   .mainGrid {
     grid-template-columns: 1fr;
+  }
+
+  .chartCard,
+  .kpiCard {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .titleGroup h1 {
+    font-size: 1.3rem;
+  }
+
+  .topControls,
+  .selectFilter {
+    width: 100%;
+  }
+
+  .chartCard,
+  .kpiCard {
+    padding: 16px;
+  }
+
+  .chartCanvas {
+    height: 320px;
+  }
+
+  .tableWrapper {
+    overflow-x: auto;
   }
 }

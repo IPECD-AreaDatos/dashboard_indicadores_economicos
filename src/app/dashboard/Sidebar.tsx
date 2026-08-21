@@ -3,6 +3,7 @@
 import { withBasePath } from '../../lib/basePath';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { // Corregido: LayoutDashboard no existe, se reemplaza por LayoutGrid
   LayoutGrid,
   TrendingUp,
@@ -13,6 +14,8 @@ import { // Corregido: LayoutDashboard no existe, se reemplaza por LayoutGrid
   Building2,
   PieChart,
   ChevronRightIcon,
+  Menu,
+  X,
   GaugeCircle, // Reemplazamos TrafficLight por GaugeCircle
 } from 'lucide-react';
 
@@ -61,9 +64,33 @@ const menuGroups: MenuGroup[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, []);
 
   return (
-    <aside className="sidebar">
+    <>
+      <button
+        type="button"
+        className="sidebar-toggle"
+        aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        {isOpen ? <X size={22} /> : <Menu size={22} />}
+      </button>
+      {isOpen && <button type="button" className="sidebar-backdrop" aria-label="Cerrar menú" onClick={() => setIsOpen(false)} />}
+      <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
       {/* Header del Sidebar */}
       <div className="sidebar-header">
         <div className="sidebar-logo-container">
@@ -111,6 +138,7 @@ export default function Sidebar() {
       </nav>
 
       
-    </aside>
+      </aside>
+    </>
   );
 }

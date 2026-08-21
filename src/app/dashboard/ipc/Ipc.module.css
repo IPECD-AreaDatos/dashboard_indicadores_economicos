@@ -299,4 +299,52 @@
   .mainGrid {
     grid-template-columns: 1fr;
   }
+
+  .chartCard,
+  .kpiCard {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .titleGroup h1 {
+    font-size: 1.3rem;
+  }
+
+  .topControls,
+  .tabsContainer {
+    width: 100%;
+  }
+
+  .topControls {
+    flex-wrap: wrap;
+  }
+
+  .tabBtn {
+    flex: 1;
+    padding: 8px 6px;
+    font-size: 0.72rem;
+  }
+
+  .selectFilter {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .chartCard,
+  .kpiCard {
+    padding: 16px;
+  }
+
+  .chartCanvas {
+    height: 320px;
+  }
+
+  .tableWrapper {
+    overflow-x: auto;
+  }
+
+  .table {
+    min-width: 560px;
+  }
 }

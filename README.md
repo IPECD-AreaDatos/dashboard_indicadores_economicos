@@ -111,6 +111,7 @@ npm run dev
 Luego abrí en el navegador:
 
 ```text
+http://localhost:3000/indicadores-economicos/dashboard
 http://localhost:3000
 ```
 

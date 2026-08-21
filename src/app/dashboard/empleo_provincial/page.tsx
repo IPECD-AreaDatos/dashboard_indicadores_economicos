@@ -200,7 +200,7 @@ export default function EmpleoProvincialPage() {
             </div>
           ) : (
             <div className={styles.chartCanvas}>
-              <ResponsiveContainer width="100%" height={620}>
+              <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={chartData}
                   layout="vertical"

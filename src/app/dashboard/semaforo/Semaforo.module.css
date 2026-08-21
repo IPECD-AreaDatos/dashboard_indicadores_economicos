@@ -3,6 +3,7 @@
   flex-direction: column;
   gap: 12px;
   height: auto;
+  min-width: 0;
 }
 
 .header {
@@ -60,7 +61,8 @@
 
 /* LA TABLA ES LA ÚNICA QUE MANTIENE EL SCROLL INTERNO */
 .tableWrapper {
-  
+  width: 100%;
+  min-width: 0;
   background: #ffffff;
   border-radius: 10px;
   border: 1px solid #cbd5e1;
@@ -71,7 +73,8 @@
 }
 
 .table {
-  width: 100%;
+  width: max-content;
+  min-width: 1100px;
   border-collapse: collapse;
   font-size: 0.78rem;
   text-align: center;
@@ -143,4 +146,23 @@
 .colorNeutral {
   background-color: #ffffff !important;
   color: #94a3b8 !important;
+}
+
+@media (max-width: 640px) {
+  .titleGroup h1 {
+    font-size: 1.25rem;
+  }
+
+  .controlsBar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .toggleBtn {
+    width: 100%;
+  }
+
+  .table {
+    min-width: 1100px;
+  }
 }

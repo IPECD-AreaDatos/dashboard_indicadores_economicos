@@ -423,7 +423,7 @@ export default function ResumenPrincipalPage() {
             </div>
 
             <div className={styles.cardBody}>
-              {/* 1. RIPTE */}
+              {/* 1. RIPTE Datos */}
               <div className={styles.indicatorRow}>
                 <div className={styles.mapIconCircle}>PAÍS</div>
                 <div className={styles.metricCol}>
@@ -453,7 +453,28 @@ export default function ResumenPrincipalPage() {
                 </Link>
               </div>
 
-              {/* 2. SMVM */}
+              {/* 2. RIPTE Tendencia (Sparkline) */}
+              <div className={styles.indicatorRow}>
+                <div className={styles.mapIconCircle}>SERIE</div>
+                <div className={styles.metricCol}>
+                  <div className={styles.metricVal}>Tendencia</div>
+                  <div className={styles.metricLabel}>RIPTE últimos 12 m.</div>
+                </div>
+                <div className={styles.metricCol} style={{ gridColumn: 'span 3' }}>
+                  <div style={{ width: '100%', height: '26px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={ripteRows.slice(-12)}>
+                        <Line type="monotone" dataKey="var_mensual" stroke="#0284c7" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <Link href="/dashboard/indicadores_pais" className={styles.arrowLink}>
+                  <ArrowUpRight size={18} />
+                </Link>
+              </div>
+
+              {/* 3. SMVM Datos */}
               <div className={styles.indicatorRow}>
                 <div className={styles.mapIconCircle}>PAÍS</div>
                 <div className={styles.metricCol}>
@@ -483,28 +504,7 @@ export default function ResumenPrincipalPage() {
                 </Link>
               </div>
 
-              {/* 3. RIPTE Sparkline */}
-              <div className={styles.indicatorRow}>
-                <div className={styles.mapIconCircle}>SERIE</div>
-                <div className={styles.metricCol}>
-                  <div className={styles.metricVal}>Tendencia</div>
-                  <div className={styles.metricLabel}>RIPTE últimos 12 m.</div>
-                </div>
-                <div className={styles.metricCol} style={{ gridColumn: 'span 3' }}>
-                  <div style={{ width: '100%', height: '26px' }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={ripteRows.slice(-12)}>
-                        <Line type="monotone" dataKey="var_mensual" stroke="#0284c7" strokeWidth={2} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                <Link href="/dashboard/indicadores" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
-              </div>
-
-              {/* 4. SMVM Sparkline */}
+              {/* 4. SMVM Tendencia (Sparkline) */}
               <div className={styles.indicatorRow}>
                 <div className={styles.mapIconCircle}>SERIE</div>
                 <div className={styles.metricCol}>
@@ -526,7 +526,7 @@ export default function ResumenPrincipalPage() {
               </div>
             </div>
           </div>
-
+          
           {/* ========================================================================= */}
           {/* CARD 4: INDUSTRIA Y CONSTRUCCIÓN (4 FILAS) */}
           {/* ========================================================================= */}

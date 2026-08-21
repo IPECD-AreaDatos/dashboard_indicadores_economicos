@@ -215,4 +215,31 @@
   .mainGrid {
     grid-template-columns: 1fr;
   }
+
+  .chartCard,
+  .sectorsCard,
+  .kpisCard {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .titleGroup h1 {
+    font-size: 1.3rem;
+  }
+
+  .topFilters,
+  .selectFilter {
+    width: 100%;
+  }
+
+  .chartCard,
+  .sectorsCard,
+  .kpisCard {
+    padding: 16px;
+  }
+
+  .chartCanvas {
+    height: 380px;
+  }
 }
