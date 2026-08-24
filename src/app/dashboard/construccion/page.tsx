@@ -1,7 +1,7 @@
 'use client';
 
 import { withBasePath } from '../../../lib/basePath';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -17,9 +17,9 @@ import styles from './Construccion.module.css';
 
 const COLOR_PALETTE = [
   '#15803d', // Verde (Corrientes)
-  '#b45309', // Ámbar
-  '#1d4ed8', // Azul
-  '#d97706', // Naranja
+  '#b45309', // Ámbar (Chaco)
+  '#1d4ed8', // Azul (Formosa)
+  '#d97706', // Naranja (Misiones)
   '#7c3aed', // Púrpura
   '#0284c7', // Celeste
   '#e11d48', // Rojo/Rosa
@@ -29,7 +29,7 @@ const COLOR_PALETTE = [
 export default function ConstruccionPage() {
   const [mode, setMode] = useState<'puestos' | 'empresas'>('puestos');
   const [subMetric, setSubMetric] = useState<'valor' | 'interanual' | 'mensual'>('valor');
-  const [selectedYear, setSelectedYear] = useState<string>('TODOS');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('ULTIMOS_12');
   const [selectedFecha, setSelectedFecha] = useState<string>('');
   const [selectedRegion, setSelectedRegion] = useState<string>('NEA');
 
@@ -72,6 +72,52 @@ export default function ConstruccionPage() {
     fetchData();
   }, []);
 
+  // Fechas disponibles filtradas según el modo activo (Empresas o Puestos)
+  const fechasDisponiblesModo = useMemo(() => {
+    if (!rawSerie || rawSerie.length === 0) return [];
+    const key = mode === 'puestos' ? 'puestos_de_trabajo' : 'cant_empresas';
+    const setFechas = new Set<string>();
+
+    rawSerie.forEach((r) => {
+      if (r[key] !== null && r[key] !== undefined && r.fecha) {
+        setFechas.add(r.fecha);
+      }
+    });
+
+    return Array.from(setFechas).sort((a, b) => b.localeCompare(a));
+  }, [rawSerie, mode]);
+
+  // Actualiza automáticamente la fecha al último mes con datos cuando cambia el modo o se cargan los datos
+  useEffect(() => {
+    if (fechasDisponiblesModo.length > 0) {
+      setSelectedFecha(fechasDisponiblesModo[0]);
+    }
+  }, [fechasDisponiblesModo]);
+
+  // Lista dinámica de años disponibles
+  const availableYears = useMemo(() => {
+    if (!rawSerie || rawSerie.length === 0) return [];
+    const yearsSet = new Set<string>();
+    rawSerie.forEach((r) => {
+      if (r.fecha) yearsSet.add(r.fecha.substring(0, 4));
+    });
+    return Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
+  }, [rawSerie]);
+
+  // Al cambiar de modo, si la fecha seleccionada no tiene datos para ese modo, cambiamos a la fecha más reciente con datos
+  useEffect(() => {
+    if (!rawSerie || rawSerie.length === 0) return;
+    const key = mode === 'puestos' ? 'puestos_de_trabajo' : 'cant_empresas';
+    const datesWithData = rawSerie
+      .filter((r) => r[key] !== null && r[key] !== undefined)
+      .map((r) => r.fecha);
+
+    const latestDate = Array.from(new Set(datesWithData)).sort((a, b) => b.localeCompare(a))[0];
+    if (latestDate && !datesWithData.includes(selectedFecha)) {
+      setSelectedFecha(latestDate);
+    }
+  }, [mode, rawSerie]);
+
   useEffect(() => {
     if (!rawSerie || rawSerie.length === 0) return;
 
@@ -86,9 +132,12 @@ export default function ConstruccionPage() {
         return;
       }
 
-      // Extraer año limpiamente del string YYYY-MM-DD
-      const yearStr = row.fecha ? row.fecha.substring(0, 4) : '';
-      if (selectedYear !== 'TODOS' && yearStr !== selectedYear) return;
+      // Solo procesar puntos que tengan datos del modo seleccionado
+      const hasValue = mode === 'puestos' 
+        ? row.puestos_de_trabajo !== null && row.puestos_de_trabajo !== undefined
+        : row.cant_empresas !== null && row.cant_empresas !== undefined;
+
+      if (!hasValue) return;
 
       const dateParts = row.fecha.split('-');
       const yearShort = dateParts[0] ? dateParts[0].slice(-2) : '';
@@ -114,9 +163,25 @@ export default function ConstruccionPage() {
       }
     });
 
-    setChartData(Object.values(grouped));
+    const sortedPoints = Object.keys(grouped)
+      .sort()
+      .map((k) => grouped[k]);
+
+    let filteredPoints = sortedPoints;
+
+    if (selectedPeriod === 'ULTIMOS_12') {
+      filteredPoints = sortedPoints.slice(-12);
+    } else if (selectedPeriod === 'ULTIMOS_24') {
+      filteredPoints = sortedPoints.slice(-24);
+    } else if (selectedPeriod === 'ULTIMOS_36') {
+      filteredPoints = sortedPoints.slice(-36);
+    } else if (selectedPeriod !== 'TODOS') {
+      filteredPoints = sortedPoints.filter((p) => p.originalFecha?.startsWith(selectedPeriod));
+    }
+
+    setChartData(filteredPoints);
     setActiveProvinces(Array.from(provSet));
-  }, [rawSerie, mode, subMetric, selectedYear, selectedRegion]);
+  }, [rawSerie, mode, subMetric, selectedPeriod, selectedRegion]);
 
   const getKpis = () => {
     if (!rawSerie || !selectedFecha) return { corrientes: null, regTotalPuestos: 0, regTotalEmpresas: 0 };
@@ -182,7 +247,7 @@ export default function ConstruccionPage() {
             value={selectedFecha}
             onChange={(e) => setSelectedFecha(e.target.value)}
           >
-            {fechasList.map((f) => (
+            {fechasDisponiblesModo.map((f) => (
               <option key={f} value={f}>
                 {formatFechaLabel(f)}
               </option>
@@ -232,31 +297,36 @@ export default function ConstruccionPage() {
               )}
             </div>
 
-            <div className={styles.yearFilter}>
-              <button
-                className={`${styles.yearBtn} ${selectedYear === 'TODOS' ? styles.yearBtnActive : ''}`}
-                onClick={() => setSelectedYear('TODOS')}
+            {/* Selector Desplegable de Período */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Período:</span>
+              <select
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: '#ffffff',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
               >
-                Todos
-              </button>
-              <button
-                className={`${styles.yearBtn} ${selectedYear === '2024' ? styles.yearBtnActive : ''}`}
-                onClick={() => setSelectedYear('2024')}
-              >
-                2024
-              </button>
-              <button
-                className={`${styles.yearBtn} ${selectedYear === '2025' ? styles.yearBtnActive : ''}`}
-                onClick={() => setSelectedYear('2025')}
-              >
-                2025
-              </button>
-              <button
-                className={`${styles.yearBtn} ${selectedYear === '2026' ? styles.yearBtnActive : ''}`}
-                onClick={() => setSelectedYear('2026')}
-              >
-                2026
-              </button>
+                <option value="ULTIMOS_12">Últimos 12 meses</option>
+                <option value="ULTIMOS_24">Últimos 2 años (24 m.)</option>
+                <option value="ULTIMOS_36">Últimos 3 años (36 m.)</option>
+                <optgroup label="Por Año Específico">
+                  {availableYears.map((yr) => (
+                    <option key={yr} value={yr}>
+                      Año {yr}
+                    </option>
+                  ))}
+                </optgroup>
+                <option value="TODOS">Toda la serie histórica</option>
+              </select>
             </div>
           </div>
 
@@ -266,18 +336,21 @@ export default function ConstruccionPage() {
             </div>
           ) : chartData.length === 0 ? (
             <div style={{ padding: '80px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>
-              No existen datos registrados para la región {selectedRegion} en el período {selectedYear}.
+              No existen datos registrados para la región {selectedRegion} en el período seleccionado.
             </div>
           ) : (
             <div className={styles.chartScrollArea}>
-              <div className={styles.chartCanvas}>
+              <div className={styles.chartCanvas} style={{ height: '520px' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
+                  <LineChart data={chartData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="fechaLabel" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
+                    <XAxis dataKey="fechaLabel" tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }} />
+                    <YAxis
+                      tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }}
+                      tickFormatter={(v) => (subMetric === 'valor' ? v.toLocaleString('es-AR') : `${v}%`)}
+                    />
                     <Tooltip formatter={formatTooltipValue} />
-                    <Legend />
+                    <Legend wrapperStyle={{ paddingTop: '10px' }} />
                     {activeProvinces.map((provName, idx) => (
                       <Line
                         key={provName}
@@ -286,7 +359,9 @@ export default function ConstruccionPage() {
                         name={provName}
                         stroke={COLOR_PALETTE[idx % COLOR_PALETTE.length]}
                         strokeWidth={provName.toLowerCase() === 'corrientes' ? 3 : 2}
-                        dot={{ r: provName.toLowerCase() === 'corrientes' ? 4 : 3 }}
+                        dot={{ r: provName.toLowerCase() === 'corrientes' ? 4 : 3, fill: COLOR_PALETTE[idx % COLOR_PALETTE.length] }}
+                        activeDot={{ r: 6 }}
+                        connectNulls={true}
                       />
                     ))}
                   </LineChart>
@@ -296,7 +371,7 @@ export default function ConstruccionPage() {
           )}
 
           <p className={styles.footerNote}>
-            Fuente: IPECD en base a Instituto de Estadística y Registro de la Industria de la Construcción (IERIC)
+            Fuente: IPECD en base a Instituto de Estadística y Registro de la Industria de la Construcción (IERIC).
           </p>
         </div>
 
@@ -336,17 +411,37 @@ export default function ConstruccionPage() {
                 <div className={styles.kpiLabel}>{mode === 'puestos' ? 'Puestos' : 'Empresas'}</div>
               </div>
               <div>
-                <div className={`${styles.kpiVal} text-rose-600`}>
+                <div
+                  className={styles.kpiVal}
+                  style={{
+                    color: Number(
+                      (mode === 'puestos'
+                        ? kpiData.corrientes?.puestos_var_interanual
+                        : kpiData.corrientes?.empresas_var_interanual) || 0
+                    ) >= 0 ? '#16a34a' : '#dc2626'
+                  }}
+                >
                   {mode === 'puestos'
-                    ? `${Number(kpiData.corrientes?.puestos_var_interanual || 0).toFixed(1)}%`
-                    : `${Number(kpiData.corrientes?.empresas_var_interanual || 0).toFixed(1)}%`}
+                    ? (kpiData.corrientes?.puestos_var_interanual !== null && kpiData.corrientes?.puestos_var_interanual !== undefined
+                        ? `${Number(kpiData.corrientes.puestos_var_interanual).toFixed(1)}%`
+                        : '-')
+                    : (kpiData.corrientes?.empresas_var_interanual !== null && kpiData.corrientes?.empresas_var_interanual !== undefined
+                        ? `${Number(kpiData.corrientes.empresas_var_interanual).toFixed(1)}%`
+                        : '-')}
                 </div>
                 <div className={styles.kpiLabel}>Interanual</div>
               </div>
               {mode === 'puestos' && (
                 <div>
-                  <div className={`${styles.kpiVal} text-emerald-600`}>
-                    {`${Number(kpiData.corrientes?.puestos_var_mensual || 0).toFixed(1)}%`}
+                  <div
+                    className={styles.kpiVal}
+                    style={{
+                      color: Number(kpiData.corrientes?.puestos_var_mensual || 0) >= 0 ? '#16a34a' : '#dc2626'
+                    }}
+                  >
+                    {kpiData.corrientes?.puestos_var_mensual !== null && kpiData.corrientes?.puestos_var_mensual !== undefined
+                      ? `${Number(kpiData.corrientes.puestos_var_mensual).toFixed(1)}%`
+                      : '-'}
                   </div>
                   <div className={styles.kpiLabel}>Mensual</div>
                 </div>
