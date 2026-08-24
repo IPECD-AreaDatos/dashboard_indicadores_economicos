@@ -1,19 +1,20 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   height: auto;
-  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .header {
-  padding-bottom: 7px;
+  padding-bottom: 6px;
   border-bottom: 2px solid #cbd5e1;
 }
 
 .titleGroup h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.02em;
@@ -21,7 +22,7 @@
 
 .titleGroup p {
   margin: 2px 0 0;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #64748b;
 }
@@ -37,9 +38,9 @@
   background-color: #14203b;
   color: #ffffff;
   border: 1px solid #1e2d4a;
-  padding: 9px 19px;
+  padding: 8px 16px;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -51,32 +52,31 @@
 
 .badge {
   display: inline-block;
-  padding: 4px 14px;
+  padding: 4px 12px;
   background-color: #e2e8f0;
   color: #1e293b;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
-/* LA TABLA ES LA ÚNICA QUE MANTIENE EL SCROLL INTERNO */
+/* TABLA AL 100% SIN SCROLL HORIZONTAL */
 .tableWrapper {
   width: 100%;
-  min-width: 0;
   background: #ffffff;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid #cbd5e1;
   box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
-  max-height: 600px;
+  max-height: calc(100vh - 290px);
   overflow-y: auto;
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 
 .table {
-  width: max-content;
-  min-width: 1100px;
+  width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   text-align: center;
 }
 
@@ -85,62 +85,62 @@
   top: 0;
   background-color: #14203b;
   color: #ffffff;
-  padding: 10px 6px;
-  font-weight: 600;
-  font-size: 0.74rem;
+  padding: 8px 4px;
+  font-weight: 700;
+  font-size: 0.72rem;
+  line-height: 1.18;
   border-right: 1px solid #2d3748;
   z-index: 10;
+  vertical-align: middle;
+}
+
+.table thead th:last-child {
+  border-right: none;
 }
 
 .table tbody td {
-  padding: 8px 6px;
+  padding: 6px 4px;
   border: 1px solid #e2e8f0;
+  font-weight: 700;
+  font-size: 0.74rem;
   white-space: nowrap;
 }
 
 .fixedCol {
-  font-weight: 600;
+  font-weight: 700;
   color: #334155;
   background-color: #f8fafc !important;
 }
 
-
-
-
+/* COLORES DEL SEMÁFORO */
 .redDark {
   background-color: #fb7185 !important;
   color: #0f172a !important;
-  font-weight: 600;
 }
 
 .redLight {
-  background-color: #f8a2ac !important;
+  background-color: #fca5a5 !important;
   color: #0f172a !important;
-  font-weight: 600;
 }
 
 .yellowLight {
-  background-color: #fcefba !important;
+  background-color: #fef08a !important;
   color: #0f172a !important;
-  font-weight: 600;
 }
 
 .yellowDark {
-  background-color: #fce89a !important;
+  background-color: #fde047 !important;
   color: #0f172a !important;
-  font-weight: 600;
 }
 
 .greenLight {
-  background-color: #72f89fd2 !important;
+  background-color: #86efac !important;
   color: #0f172a !important;
-  font-weight: 600;
 }
 
 .greenDark {
-  background-color: #21d35cbe !important;
+  background-color: #4ade80 !important;
   color: #0f172a !important;
-  font-weight: 600;
 }
 
 .colorNeutral {
@@ -148,21 +148,11 @@
   color: #94a3b8 !important;
 }
 
-@media (max-width: 640px) {
-  .titleGroup h1 {
-    font-size: 1.25rem;
+@media (max-width: 1100px) {
+  .tableWrapper {
+    overflow-x: auto;
   }
-
-  .controlsBar {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .toggleBtn {
-    width: 100%;
-  }
-
   .table {
-    min-width: 1100px;
+    min-width: 1000px;
   }
 }

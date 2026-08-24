@@ -1,7 +1,7 @@
 'use client';
 
 import { withBasePath } from '../../../lib/basePath';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -26,20 +26,39 @@ function norm(str?: string) {
     .toUpperCase();
 }
 
+// Las 13 aperturas oficiales de INDEC (Nivel General + 12 Divisiones principales)
+const OFFICIAL_DIVISIONS_MAP: { [key: string]: string } = {
+  'NIVEL GENERAL': 'Nivel general',
+  'ALIMENTOS Y BEBIDAS NO ALCOHOLICAS': 'Alimentos y bebidas no alcohólicas',
+  'BEBIDAS ALCOHOLICAS Y TABACO': 'Bebidas alcohólicas y tabaco',
+  'PRENDAS DE VESTIR Y CALZADO': 'Prendas de vestir y calzado',
+  'VIVIENDA, AGUA, ELECTRICIDAD, GAS Y OTROS COMBUSTIBLES': 'Vivienda, agua, electricidad, gas y otros combustibles',
+  'EQUIPAMIENTO Y MANTENIMIENTO DEL HOGAR': 'Equipamiento y mantenimiento del hogar',
+  'SALUD': 'Salud',
+  'TRANSPORTE': 'Transporte',
+  'COMUNICACION': 'Comunicación',
+  'COMUNICACIONES': 'Comunicación',
+  'RECREACION Y CULTURA': 'Recreación y cultura',
+  'EDUCACION': 'Educación',
+  'RESTAURANTES Y HOTELES': 'Restaurantes y hoteles',
+  'BIENES Y SERVICIOS VARIOS': 'Bienes y servicios varios',
+};
+
 export default function IpcPage() {
   const [activeTab, setActiveTab] = useState<'serie' | 'aperturas' | 'subdivisiones'>('serie');
   const [metric, setMetric] = useState<'mensual' | 'interanual'>('interanual');
-  const [selectedYear, setSelectedYear] = useState<string>('TODOS');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('ULTIMOS_12');
   const [selectedFecha, setSelectedFecha] = useState<string>('');
   const [selectedRegion, setSelectedRegion] = useState<string>('Nación');
 
   const [rawSerie, setRawSerie] = useState<any[]>([]);
-  const [rawAperturas, setRawAperturas] = useState<any[]>([]);
+  const [rawItems, setRawItems] = useState<any[]>([]);
   const [regionesList, setRegionesList] = useState<any[]>([]);
   const [fechasList, setFechasList] = useState<string[]>([]);
 
   const [chartDataSerie, setChartDataSerie] = useState<any[]>([]);
   const [chartDataAperturas, setChartDataAperturas] = useState<any[]>([]);
+  const [tableDataSubdivisiones, setTableDataSubdivisiones] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -50,7 +69,7 @@ export default function IpcPage() {
 
         if (json.serieGeneral) {
           setRawSerie(json.serieGeneral);
-          setRawAperturas(json.aperturas || []);
+          setRawItems(json.items || []);
           setRegionesList(json.regiones || []);
           setFechasList(json.fechasDisponibles || []);
 
@@ -72,27 +91,42 @@ export default function IpcPage() {
     fetchData();
   }, []);
 
-  // 1. Serie Histórica (Líneas)
+  const availableYears = useMemo(() => {
+    if (!rawSerie || rawSerie.length === 0) return [];
+    const yearsSet = new Set<string>();
+    rawSerie.forEach((r) => {
+      if (r.fecha) yearsSet.add(r.fecha.substring(0, 4));
+    });
+    return Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
+  }, [rawSerie]);
+
+  // 1. Serie Histórica
   useEffect(() => {
     if (!rawSerie || rawSerie.length === 0) return;
 
     const target = norm(selectedRegion);
 
-    // Fallback: si no hay coincidencia exacta, toma las de la región elegida o las generales
-    const filtered = rawSerie.filter((row) => {
+    let regionFiltered = rawSerie.filter((row) => {
       const rowReg = norm(row.nombre_region);
-      const matchRegion =
-        target.includes('NACION') || target === ''
-          ? rowReg.includes('NACION') || rowReg === '' || Number(row.id_region) <= 1
-          : rowReg.includes(target) || target.includes(rowReg);
-
-      const yearStr = row.fecha ? row.fecha.substring(0, 4) : '';
-      const matchYear = selectedYear === 'TODOS' || yearStr === selectedYear;
-
-      return matchRegion && matchYear;
+      return target.includes('NACION') || target === ''
+        ? rowReg.includes('NACION') || rowReg === '' || Number(row.id_region) <= 1
+        : rowReg.includes(target) || target.includes(rowReg);
     });
 
-    const formatted = filtered.map((row) => {
+    regionFiltered.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+
+    let periodFiltered = regionFiltered;
+    if (selectedPeriod === 'ULTIMOS_12') {
+      periodFiltered = regionFiltered.slice(-12);
+    } else if (selectedPeriod === 'ULTIMOS_24') {
+      periodFiltered = regionFiltered.slice(-24);
+    } else if (selectedPeriod === 'ULTIMOS_36') {
+      periodFiltered = regionFiltered.slice(-36);
+    } else if (selectedPeriod !== 'TODOS') {
+      periodFiltered = regionFiltered.filter((row) => row.fecha?.startsWith(selectedPeriod));
+    }
+
+    const formatted = periodFiltered.map((row) => {
       const dateParts = row.fecha.split('-');
       const yearShort = dateParts[0] ? dateParts[0].slice(-2) : '';
       const monthNum = parseInt(dateParts[1], 10);
@@ -106,15 +140,15 @@ export default function IpcPage() {
     });
 
     setChartDataSerie(formatted);
-  }, [rawSerie, selectedRegion, selectedYear, metric]);
+  }, [rawSerie, selectedRegion, selectedPeriod, metric]);
 
-  // 2. Aperturas (Barras con grosor correcto)
+  // 2. Aperturas y Subdivisiones
   useEffect(() => {
-    if (!rawAperturas || rawAperturas.length === 0 || !selectedFecha) return;
+    if (!rawItems || rawItems.length === 0 || !selectedFecha) return;
 
     const target = norm(selectedRegion);
 
-    const filtered = rawAperturas.filter((row) => {
+    const regionFiltered = rawItems.filter((row) => {
       const matchFecha = row.fecha === selectedFecha;
       const rowReg = norm(row.nombre_region);
       const matchRegion =
@@ -122,28 +156,61 @@ export default function IpcPage() {
           ? rowReg.includes('NACION') || rowReg === '' || Number(row.id_region) <= 1
           : rowReg.includes(target) || target.includes(rowReg);
 
-      return matchFecha && matchRegion && row.nombre_division;
+      return matchFecha && matchRegion;
     });
 
-    // Agrupar divisiones únicas
     const divMap: { [key: string]: any } = {};
-    filtered.forEach((r) => {
-      const divName = r.nombre_division.trim();
-      if (!divMap[divName]) {
-        divMap[divName] = {
-          division: divName,
+    const subMap: { [key: string]: any } = {};
+    const allMap: { [key: string]: any } = {};
+
+    regionFiltered.forEach((r) => {
+      const rawName = (r.nombre_division || r.nombre_categoria || '').trim();
+      const nameNorm = norm(rawName);
+
+      // Match con las 12 divisiones canónicas + Nivel General
+      const matchedCanonical = OFFICIAL_DIVISIONS_MAP[nameNorm];
+
+      if (matchedCanonical) {
+        if (!divMap[matchedCanonical]) {
+          divMap[matchedCanonical] = {
+            division: matchedCanonical,
+            var_mensual: Number(r.var_mensual) || 0,
+            var_interanual: Number(r.var_interanual) || 0,
+          };
+        }
+      } else if (rawName) {
+        // Subdivisiones específicas
+        if (!subMap[rawName]) {
+          subMap[rawName] = {
+            categoria: rawName,
+            var_mensual: Number(r.var_mensual) || 0,
+            var_interanual: Number(r.var_interanual) || 0,
+          };
+        }
+      }
+
+      // Registro de todas las categorías
+      if (rawName && !allMap[rawName]) {
+        allMap[rawName] = {
+          categoria: rawName,
           var_mensual: Number(r.var_mensual) || 0,
           var_interanual: Number(r.var_interanual) || 0,
         };
       }
     });
 
-    const sorted = Object.values(divMap).sort((a, b) =>
+    const sortedAperturas = Object.values(divMap).sort((a, b) =>
       metric === 'mensual' ? b.var_mensual - a.var_mensual : b.var_interanual - a.var_interanual
     );
 
-    setChartDataAperturas(sorted);
-  }, [rawAperturas, selectedFecha, selectedRegion, metric]);
+    // Si tiene subdivisiones detalladas (como NEA), muestra subMap.
+    // Si no tiene (como Nación), muestra allMap para que no quede vacía.
+    const subList = Object.keys(subMap).length > 0 ? Object.values(subMap) : Object.values(allMap);
+    const sortedSubdivisiones = subList.sort((a, b) => b.var_mensual - a.var_mensual);
+
+    setChartDataAperturas(sortedAperturas);
+    setTableDataSubdivisiones(sortedSubdivisiones);
+  }, [rawItems, selectedFecha, selectedRegion, metric]);
 
   const formatFechaLabel = (fStr: string) => {
     if (!fStr) return '-';
@@ -228,9 +295,9 @@ export default function IpcPage() {
         <div className={styles.chartCard}>
           <div className={styles.chartHeader}>
             <div className={styles.badgeCategory}>
-              {activeTab === 'serie' && 'Serie histórica para años seleccionados'}
-              {activeTab === 'aperturas' && 'IPC por principales aperturas'}
-              {activeTab === 'subdivisiones' && 'IPC por principales subdivisiones'}
+              {activeTab === 'serie' && 'Evolución temporal del IPC'}
+              {activeTab === 'aperturas' && 'IPC por principales aperturas (12 divisiones)'}
+              {activeTab === 'subdivisiones' && 'IPC desglose por subdivisiones'}
             </div>
 
             {activeTab !== 'subdivisiones' && (
@@ -257,16 +324,26 @@ export default function IpcPage() {
             )}
 
             {activeTab === 'serie' && (
-              <div className={styles.yearFilter}>
-                {['TODOS', '2024', '2025', '2026'].map((yr) => (
-                  <button
-                    key={yr}
-                    className={`${styles.yearBtn} ${selectedYear === yr ? styles.yearBtnActive : ''}`}
-                    onClick={() => setSelectedYear(yr)}
-                  >
-                    {yr === 'TODOS' ? 'Todos' : yr}
-                  </button>
-                ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Período:</span>
+                <select
+                  className={styles.selectFilter}
+                  value={selectedPeriod}
+                  onChange={(e) => setSelectedPeriod(e.target.value)}
+                  style={{ minWidth: '150px' }}
+                >
+                  <option value="ULTIMOS_12">Últimos 12 meses</option>
+                  <option value="ULTIMOS_24">Últimos 2 años (24 m.)</option>
+                  <option value="ULTIMOS_36">Últimos 3 años (36 m.)</option>
+                  <optgroup label="Por Año Específico">
+                    {availableYears.map((yr) => (
+                      <option key={yr} value={yr}>
+                        Año {yr}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <option value="TODOS">Toda la serie histórica</option>
+                </select>
               </div>
             )}
           </div>
@@ -282,8 +359,8 @@ export default function IpcPage() {
                 <ResponsiveContainer width="100%" height={500}>
                   <LineChart data={chartDataSerie} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="fechaLabel" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} unit="%" />
+                    <XAxis dataKey="fechaLabel" tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }} />
+                    <YAxis tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }} unit="%" />
                     <Tooltip
                       cursor={{ stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '3 3' }}
                       formatter={(v: number) => [`${v.toFixed(1)}%`, metric === 'mensual' ? 'Mensual' : 'Interanual']}
@@ -300,13 +377,13 @@ export default function IpcPage() {
                 </ResponsiveContainer>
               )}
 
-              {/* 2. APERTURAS (BARRAS GRUESAS CON barSize={16}) */}
+              {/* 2. APERTURAS (12 CATEGORÍAS PRINCIPALES EXACTAS) */}
               {activeTab === 'aperturas' && (
                 <ResponsiveContainer width="100%" height={520}>
                   <BarChart
                     data={chartDataAperturas}
                     layout="vertical"
-                    margin={{ left: 220, right: 40, top: 10, bottom: 10 }}
+                    margin={{ left: 230, right: 40, top: 10, bottom: 10 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
                     <XAxis type="number" tick={{ fontSize: 11 }} unit="%" />
@@ -314,7 +391,7 @@ export default function IpcPage() {
                       dataKey="division"
                       type="category"
                       tick={{ fontSize: 11, fontWeight: 600, fill: '#1e293b' }}
-                      width={210}
+                      width={220}
                     />
                     <Tooltip
                       cursor={false}
@@ -336,22 +413,22 @@ export default function IpcPage() {
                 </ResponsiveContainer>
               )}
 
-              {/* 3. SUBDIVISIONES */}
+              {/* 3. SUBDIVISIONES (DESGLOSE COMPLETO) */}
               {activeTab === 'subdivisiones' && (
                 <div className={styles.tableWrapper}>
                   <table className={styles.table}>
                     <thead>
                       <tr>
-                        <th>Categoría / División</th>
+                        <th>Categoría / Subdivisión</th>
                         <th style={{ textAlign: 'right' }}>Variación mensual</th>
                         <th style={{ textAlign: 'right' }}>Variación interanual</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {chartDataAperturas.map((row, idx) => (
+                      {tableDataSubdivisiones.map((row, idx) => (
                         <tr key={idx}>
-                          <td style={{ fontWeight: norm(row.division).includes('GENERAL') ? 800 : 600 }}>
-                            {row.division}
+                          <td style={{ fontWeight: 600 }}>
+                            {row.categoria}
                           </td>
                           <td style={{ textAlign: 'right', fontWeight: 700, color: '#15803d' }}>
                             {row.var_mensual ? `${row.var_mensual.toFixed(1)}%` : '-'}

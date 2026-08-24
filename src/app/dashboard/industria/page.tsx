@@ -1,8 +1,7 @@
 'use client';
 
 import { withBasePath } from '../../../lib/basePath';
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useState, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -13,7 +12,6 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { ArrowRight } from 'lucide-react';
 import styles from './Industria.module.css';
 
 interface IndicatorItem {
@@ -33,7 +31,7 @@ const AVAILABLE_SERIES: IndicatorItem[] = [
   { key: 'ipicorr_met', label: 'IPICorr Metales', color: '#475569', defaultChecked: false, menKey: 'ipicorr_met_men', iaKey: 'ipicorr_met_ia' },
   { key: 'ipicorr_min', label: 'IPICorr Min. no metálicos', color: '#ca8a04', defaultChecked: false, menKey: 'ipicorr_min_men', iaKey: 'ipicorr_min_ia' },
   { key: 'ipicorr_tex', label: 'IPICorr Textil', color: '#0d9488', defaultChecked: false, menKey: 'ipicorr_tex_men', iaKey: 'ipicorr_tex_ia' },
-  
+
   // --- NACIÓN ---
   { key: 'ipi_nac', label: 'IPI Nación', color: '#84cc16', defaultChecked: true, menKey: 'ipi_nac_men', iaKey: 'ipi_nac_ia' },
   { key: 'ipi_nac_alim', label: 'IPI Nación Alimentos', color: '#eab308', defaultChecked: false, menKey: 'ipi_nac_alim_men', iaKey: 'ipi_nac_alim_ia' },
@@ -41,14 +39,14 @@ const AVAILABLE_SERIES: IndicatorItem[] = [
   { key: 'ipi_nac_tex', label: 'IPI Nación Textil', color: '#06b6d4', defaultChecked: false, menKey: 'ipi_nac_tex_men', iaKey: 'ipi_nac_tex_ia' },
   { key: 'ipi_nac_min_no_met', label: 'IPI Nación Min. no metálicos', color: '#8b5cf6', defaultChecked: false, menKey: 'ipi_nac_min_no_met_men', iaKey: 'ipi_nac_min_no_met_ia' },
   { key: 'ipi_nac_min_met', label: 'IPI Nación Metales', color: '#94a3b8', defaultChecked: false, menKey: 'ipi_nac_min_met_men', iaKey: 'ipi_nac_min_met_ia' },
-  
+
   // --- ACTIVIDAD GLOBAL ---
   { key: 'emae', label: 'EMAE', color: '#0284c7', defaultChecked: true, menKey: 'emae_men', iaKey: 'emae_ia' },
 ];
 
 export default function IndustriaPage() {
   const [viewMode, setViewMode] = useState<'mensual' | 'interanual'>('mensual');
-  const [selectedYear, setSelectedYear] = useState<string>('TODOS');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('ULTIMOS_12'); // Por defecto últimos 12 meses
   const [activeIndicators, setActiveIndicators] = useState<string[]>(
     AVAILABLE_SERIES.filter((i) => i.defaultChecked).map((i) => i.key)
   );
@@ -72,6 +70,17 @@ export default function IndustriaPage() {
     fetchData();
   }, []);
 
+  // Extraer lista de años disponibles en los datos
+  const availableYears = useMemo(() => {
+    if (!rawData) return [];
+    const yearsSet = new Set<string>();
+    const all = [...(rawData.ipicorr || []), ...(rawData.ipiNacion || []), ...(rawData.emae || [])];
+    all.forEach((r) => {
+      if (r.fecha) yearsSet.add(r.fecha.substring(0, 4));
+    });
+    return Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
+  }, [rawData]);
+
   useEffect(() => {
     if (!rawData) return;
 
@@ -79,35 +88,27 @@ export default function IndustriaPage() {
     const ipiNacRows = rawData.ipiNacion || [];
     const emaeRows = rawData.emae || [];
 
-    // Colección de todas las fechas disponibles
     const dateMap: { [key: string]: any } = {};
 
-    // 1. Integrar IPICorr
     ipicorrRows.forEach((r: any) => {
       if (!dateMap[r.fecha]) dateMap[r.fecha] = { fecha: r.fecha };
       Object.assign(dateMap[r.fecha], r);
     });
 
-    // 2. Integrar IPI Nación
     ipiNacRows.forEach((r: any) => {
       if (!dateMap[r.fecha]) dateMap[r.fecha] = { fecha: r.fecha };
       Object.assign(dateMap[r.fecha], r);
     });
 
-    // 3. Integrar EMAE
     emaeRows.forEach((r: any) => {
       if (!dateMap[r.fecha]) dateMap[r.fecha] = { fecha: r.fecha };
       Object.assign(dateMap[r.fecha], r);
     });
 
-    // Ordenar fechas y formatear puntos del gráfico
     const sortedDates = Object.keys(dateMap).sort();
-    const formattedPoints: any[] = [];
+    const allPoints: any[] = [];
 
     sortedDates.forEach((fechaStr) => {
-      const yearStr = fechaStr.substring(0, 4);
-      if (selectedYear !== 'TODOS' && yearStr !== selectedYear) return;
-
       const dateParts = fechaStr.split('-');
       const yearShort = dateParts[0] ? dateParts[0].slice(-2) : '';
       const monthNum = parseInt(dateParts[1], 10);
@@ -122,15 +123,29 @@ export default function IndustriaPage() {
       const row = dateMap[fechaStr];
 
       AVAILABLE_SERIES.forEach((ind) => {
-        const val = viewMode === 'mensual' ? Number(row[ind.menKey]) : Number(row[ind.iaKey]);
-        point[ind.key] = isNaN(val) ? null : val;
+        const rawVal = viewMode === 'mensual' ? row[ind.menKey] : row[ind.iaKey];
+        const val = Number(rawVal);
+        point[ind.key] = rawVal !== null && rawVal !== undefined && !isNaN(val) ? val : null;
       });
 
-      formattedPoints.push(point);
+      allPoints.push(point);
     });
 
-    setChartData(formattedPoints);
-  }, [rawData, viewMode, selectedYear]);
+    // Aplicar filtro de período
+    let filteredPoints = allPoints;
+
+    if (selectedPeriod === 'ULTIMOS_12') {
+      filteredPoints = allPoints.slice(-12);
+    } else if (selectedPeriod === 'ULTIMOS_24') {
+      filteredPoints = allPoints.slice(-24);
+    } else if (selectedPeriod === 'ULTIMOS_36') {
+      filteredPoints = allPoints.slice(-36);
+    } else if (selectedPeriod !== 'TODOS') {
+      filteredPoints = allPoints.filter((p) => p.fecha.startsWith(selectedPeriod));
+    }
+
+    setChartData(filteredPoints);
+  }, [rawData, viewMode, selectedPeriod]);
 
   const toggleIndicator = (key: string) => {
     setActiveIndicators((prev) =>
@@ -167,20 +182,40 @@ export default function IndustriaPage() {
                 className={`${styles.modeBtn} ${viewMode === 'interanual' ? styles.modeBtnActive : ''}`}
                 onClick={() => setViewMode('interanual')}
               >
-                Var. i.a.
+                Var. interanual
               </button>
             </div>
 
-            <div className={styles.yearFilter}>
-              {['TODOS', '2024', '2025', '2026'].map((yr) => (
-                <button
-                  key={yr}
-                  className={`${styles.yearBtn} ${selectedYear === yr ? styles.yearBtnActive : ''}`}
-                  onClick={() => setSelectedYear(yr)}
-                >
-                  {yr === 'TODOS' ? 'Todos' : yr}
-                </button>
-              ))}
+            {/* Selector Desplegable de Período */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Período:</span>
+              <select
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: '#ffffff',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+              >
+                <option value="ULTIMOS_12">Últimos 12 meses</option>
+                <option value="ULTIMOS_24">Últimos 2 años (24 m.)</option>
+                <option value="ULTIMOS_36">Últimos 3 años (36 m.)</option>
+                <optgroup label="Por Año Específico">
+                  {availableYears.map((yr) => (
+                    <option key={yr} value={yr}>
+                      Año {yr}
+                    </option>
+                  ))}
+                </optgroup>
+                <option value="TODOS">Toda la serie histórica</option>
+              </select>
             </div>
           </div>
 
@@ -190,14 +225,14 @@ export default function IndustriaPage() {
             </div>
           ) : (
             <div className={styles.chartScrollArea}>
-              <div className={styles.chartCanvas}>
+              <div className={styles.chartCanvas} style={{ height: '520px' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
+                  <LineChart data={chartData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="fechaLabel" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} unit="%" />
+                    <XAxis dataKey="fechaLabel" tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }} />
+                    <YAxis tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }} unit="%" />
                     <Tooltip formatter={formatTooltipValue} />
-                    <Legend />
+                    <Legend wrapperStyle={{ paddingTop: '10px' }} />
                     {AVAILABLE_SERIES.filter((i) => activeIndicators.includes(i.key)).map((ind) => (
                       <Line
                         key={ind.key}
@@ -206,7 +241,9 @@ export default function IndustriaPage() {
                         name={ind.label}
                         stroke={ind.color}
                         strokeWidth={ind.key === 'ipicorr' ? 3 : 2}
-                        dot={{ r: ind.key === 'ipicorr' ? 4 : 3 }}
+                        connectNulls={true}
+                        dot={{ r: ind.key === 'ipicorr' ? 4 : 3, fill: ind.color }}
+                        activeDot={{ r: 6 }}
                       />
                     ))}
                   </LineChart>
@@ -220,7 +257,7 @@ export default function IndustriaPage() {
           </p>
         </div>
 
-        {/* Panel Lateral de Checkboxes y Enlaces */}
+        {/* Panel Lateral de Checkboxes */}
         <div className={styles.sidebarColumn}>
           <div className={styles.indicatorsCard}>
             <div className={styles.badgeIndicators}>Indicadores</div>
@@ -238,8 +275,6 @@ export default function IndustriaPage() {
               ))}
             </div>
           </div>
-
-          
         </div>
       </div>
     </div>

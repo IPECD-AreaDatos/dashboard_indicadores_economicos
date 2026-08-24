@@ -15,19 +15,21 @@ export async function GET(request: NextRequest) {
     const client = await pool.connect();
     await client.query('SET search_path TO public;');
 
-    // 1. Serie Anual Totales (filtrando por actividad general o agregada si corresponde)
+    // 1. Serie Anual TOTAL PBG (Filtra por la fila consolidada 'PBG')
     const queryAnual = `
       SELECT 
         "Año" as anio,
         "Variable" as variable,
         "Actividad" as actividad,
         "Valor" as valor,
-        "Variacion" as variacion
+        ROUND((CASE WHEN ABS(COALESCE("Variacion", 0)) < 1 AND COALESCE("Variacion", 0) != 0 THEN "Variacion" * 100 ELSE "Variacion" END)::numeric, 1) as variacion
       FROM pbg_valor_anual
+      WHERE UPPER(TRIM(COALESCE("Actividad", ''))) = 'PBG' 
+         OR UPPER(TRIM(COALESCE("Variable", ''))) = 'PBG'
       ORDER BY "Año" ASC;
     `;
 
-    // 2. Serie Trimestral
+    // 2. Serie Trimestral TOTAL PBG
     const queryTrimestral = `
       SELECT 
         "Año" as anio,
@@ -35,19 +37,21 @@ export async function GET(request: NextRequest) {
         "Variable" as variable,
         "Actividad" as actividad,
         "Valor" as valor,
-        "Variacion" as variacion
+        ROUND((CASE WHEN ABS(COALESCE("Variacion", 0)) < 1 AND COALESCE("Variacion", 0) != 0 THEN "Variacion" * 100 ELSE "Variacion" END)::numeric, 1) as variacion
       FROM pbg_valor_trimestral
+      WHERE UPPER(TRIM(COALESCE("Actividad", ''))) = 'PBG' 
+         OR UPPER(TRIM(COALESCE("Variable", ''))) = 'PBG'
       ORDER BY "Año" ASC, "Trimestre" ASC;
     `;
 
-    // 3. Desglose Sectorial por Actividad (pbg_anual_desglosado)
+    // 3. Desglose Sectorial por Actividad
     const queryDesglosado = `
       SELECT 
         letra,
         descripcion,
         "año" as anio,
         valor,
-        variacion_interanual
+        ROUND((CASE WHEN ABS(COALESCE(variacion_interanual, 0)) < 1 AND COALESCE(variacion_interanual, 0) != 0 THEN variacion_interanual * 100 ELSE variacion_interanual END)::numeric, 1) as variacion_interanual
       FROM pbg_anual_desglosado
       ORDER BY "año" DESC, valor DESC;
     `;

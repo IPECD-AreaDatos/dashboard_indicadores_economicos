@@ -1,7 +1,7 @@
 'use client';
 
 import { withBasePath } from '../../../lib/basePath';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -15,12 +15,13 @@ import styles from './Pbg.module.css';
 
 export default function PbgPage() {
   const [freq, setFreq] = useState<'anual' | 'trimestral'>('anual');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('ULTIMOS_5'); // Por defecto últimos 5 años
   const [dataAnual, setDataAnual] = useState<any[]>([]);
   const [dataTrimestral, setDataTrimestral] = useState<any[]>([]);
   const [desglosado, setDesglosado] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [selectedYearDesglose, setSelectedYearDesglose] = useState<number>(2023);
+  const [selectedYearDesglose, setSelectedYearDesglose] = useState<number>(2024);
 
   useEffect(() => {
     async function fetchData() {
@@ -29,8 +30,8 @@ export default function PbgPage() {
         const json = await res.json();
 
         if (json.anual) {
-          const totalAnual = json.anual.filter((r: any) => r.actividad === 'A' || !r.actividad);
-          const formattedAnual = (totalAnual.length > 0 ? totalAnual : json.anual.slice(0, 20)).map((r: any) => ({
+          const formattedAnual = json.anual.map((r: any) => ({
+            anio: String(r.anio),
             label: String(r.anio),
             valor: Number(r.valor) || 0,
             variacion: Number(r.variacion) || 0,
@@ -39,8 +40,8 @@ export default function PbgPage() {
         }
 
         if (json.trimestral) {
-          const totalTrim = json.trimestral.filter((r: any) => r.actividad === 'A' || !r.actividad);
-          const formattedTrim = (totalTrim.length > 0 ? totalTrim : json.trimestral.slice(0, 40)).map((r: any) => ({
+          const formattedTrim = json.trimestral.map((r: any) => ({
+            anio: String(r.anio),
             label: `${r.anio}-T${r.trimestre}`,
             valor: Number(r.valor) || 0,
             variacion: Number(r.variacion) || 0,
@@ -63,8 +64,35 @@ export default function PbgPage() {
     fetchData();
   }, []);
 
-  const activeChartData = freq === 'anual' ? dataAnual : dataTrimestral;
-  const lastItem = activeChartData.length > 0 ? activeChartData[activeChartData.length - 1] : null;
+  // Lista de años disponibles para el filtro
+  const availableYears = useMemo(() => {
+    const list = freq === 'anual' ? dataAnual : dataTrimestral;
+    const yearsSet = new Set<string>();
+    list.forEach((r) => {
+      if (r.anio) yearsSet.add(r.anio);
+    });
+    return Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
+  }, [freq, dataAnual, dataTrimestral]);
+
+  // Filtrado de la serie activa según el período seleccionado
+  const filteredChartData = useMemo(() => {
+    const source = freq === 'anual' ? dataAnual : dataTrimestral;
+    if (source.length === 0) return [];
+
+    if (selectedPeriod === 'ULTIMOS_5') {
+      return source.slice(freq === 'anual' ? -5 : -8);
+    }
+    if (selectedPeriod === 'ULTIMOS_10') {
+      return source.slice(freq === 'anual' ? -10 : -16);
+    }
+    if (selectedPeriod !== 'TODOS') {
+      return source.filter((r) => r.anio === selectedPeriod);
+    }
+    return source;
+  }, [freq, dataAnual, dataTrimestral, selectedPeriod]);
+
+  const rawActiveData = freq === 'anual' ? dataAnual : dataTrimestral;
+  const lastItem = rawActiveData.length > 0 ? rawActiveData[rawActiveData.length - 1] : null;
 
   const desgloseFiltrado = desglosado.filter((d) => Number(d.anio) === selectedYearDesglose);
   const anosDesglose = Array.from(new Set(desglosado.map((d) => Number(d.anio)))).sort((a, b) => b - a);
@@ -86,13 +114,19 @@ export default function PbgPage() {
           <div className={styles.freqSelector}>
             <button
               className={`${styles.freqBtn} ${freq === 'anual' ? styles.freqBtnActive : ''}`}
-              onClick={() => setFreq('anual')}
+              onClick={() => {
+                setFreq('anual');
+                setSelectedPeriod('ULTIMOS_5');
+              }}
             >
               Anual
             </button>
             <button
               className={`${styles.freqBtn} ${freq === 'trimestral' ? styles.freqBtnActive : ''}`}
-              onClick={() => setFreq('trimestral')}
+              onClick={() => {
+                setFreq('trimestral');
+                setSelectedPeriod('ULTIMOS_5');
+              }}
             >
               Trimestral
             </button>
@@ -108,6 +142,41 @@ export default function PbgPage() {
             <div className={styles.badgeCategory}>
               {freq === 'anual' ? 'Evolución Anual del PBG' : 'Evolución Trimestral del PBG'}
             </div>
+
+            {/* Selector Desplegable de Período */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Período:</span>
+              <select
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: '#ffffff',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+              >
+                <option value="ULTIMOS_5">
+                  {freq === 'anual' ? 'Últimos 5 años' : 'Últimos 8 trimestres (2 años)'}
+                </option>
+                <option value="ULTIMOS_10">
+                  {freq === 'anual' ? 'Últimos 10 años' : 'Últimos 16 trimestres (4 años)'}
+                </option>
+                <optgroup label="Por Año Específico">
+                  {availableYears.map((yr) => (
+                    <option key={yr} value={yr}>
+                      Año {yr}
+                    </option>
+                  ))}
+                </optgroup>
+                <option value="TODOS">Toda la serie histórica</option>
+              </select>
+            </div>
           </div>
 
           {loading ? (
@@ -117,10 +186,10 @@ export default function PbgPage() {
           ) : (
             <div className={styles.chartCanvas}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={activeChartData}>
+                <LineChart data={filteredChartData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} unit="%" />
+                  <XAxis dataKey="label" tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }} />
+                  <YAxis tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }} unit="%" />
                   <Tooltip formatter={formatTooltipValue} />
                   <Line
                     type="monotone"
@@ -128,7 +197,8 @@ export default function PbgPage() {
                     name="Variación %"
                     stroke="#15803d"
                     strokeWidth={3}
-                    dot={{ r: 4, fill: '#15803d' }}
+                    dot={{ r: 5, fill: '#15803d' }}
+                    activeDot={{ r: 7 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -136,18 +206,18 @@ export default function PbgPage() {
           )}
 
           <p className={styles.footerNote}>
-            Fuente: IPECD — Valor Agregado Bruto a Precios Constantes.
+            Fuente: IPECD — Valor Agregado Bruto a Precios Constantes del 2004.
           </p>
         </div>
 
         {/* KPIs Lateral */}
         <div className={styles.kpiColumn}>
-          <div className={styles.dateDisplay}>Año {lastItem?.label || '2023'}</div>
+          <div className={styles.dateDisplay}>Año {lastItem?.label || '2024'}</div>
 
           <div className={styles.kpiCard}>
-            <div className={styles.kpiSubtitle}>Valor Agregado Bruto</div>
+            <div className={styles.kpiSubtitle}>Valor Agregado Bruto Total</div>
             <div className={styles.kpiMainVal}>
-              ${lastItem ? (lastItem.valor / 1000).toFixed(2) : '11,09'} mill.
+              ${lastItem ? (lastItem.valor / 1000).toLocaleString('es-AR', { maximumFractionDigits: 2 }) : '10.787,90'} mill.
             </div>
             <div className={styles.kpiSubtitle}>A Precios Constantes del 2004</div>
           </div>
@@ -158,7 +228,7 @@ export default function PbgPage() {
               className={styles.kpiMainVal}
               style={{ color: (lastItem?.variacion || 0) >= 0 ? '#16a34a' : '#dc2626' }}
             >
-              {lastItem ? `${lastItem.variacion.toFixed(1)}%` : '-0,1%'}
+              {lastItem ? `${lastItem.variacion > 0 ? '+' : ''}${lastItem.variacion.toFixed(1)}%` : '-2.7%'}
             </div>
             <div className={styles.kpiSubtitle}>Respecto al período anterior</div>
           </div>
@@ -174,7 +244,8 @@ export default function PbgPage() {
               padding: '6px 12px',
               borderRadius: '8px',
               border: '1px solid #cbd5e1',
-              fontWeight: 600,
+              fontWeight: 700,
+              backgroundColor: '#ffffff',
             }}
             value={selectedYearDesglose}
             onChange={(e) => setSelectedYearDesglose(Number(e.target.value))}
@@ -201,8 +272,8 @@ export default function PbgPage() {
               {desgloseFiltrado.map((row, idx) => (
                 <tr key={idx}>
                   <td style={{ fontWeight: 700, color: '#1e2d4a' }}>{row.letra}</td>
-                  <td>{row.descripcion}</td>
-                  <td style={{ fontWeight: 600 }}>
+                  <td style={{ fontWeight: row.letra === 'PBG' ? 800 : 500 }}>{row.descripcion}</td>
+                  <td style={{ fontWeight: 700 }}>
                     ${Number(row.valor || 0).toLocaleString('es-AR')}
                   </td>
                   <td
@@ -211,8 +282,8 @@ export default function PbgPage() {
                       color: Number(row.variacion_interanual || 0) >= 0 ? '#16a34a' : '#dc2626',
                     }}
                   >
-                    {row.variacion_interanual
-                      ? `${Number(row.variacion_interanual).toFixed(1)}%`
+                    {row.variacion_interanual !== null && row.variacion_interanual !== undefined
+                      ? `${Number(row.variacion_interanual) > 0 ? '+' : ''}${Number(row.variacion_interanual).toFixed(1)}%`
                       : '-'}
                   </td>
                 </tr>

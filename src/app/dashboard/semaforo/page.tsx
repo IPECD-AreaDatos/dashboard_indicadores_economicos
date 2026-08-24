@@ -15,6 +15,8 @@ interface SemaforoRow {
   patentamiento_0km_auto: number | null;
   patentamiento_0km_motocicleta: number | null;
   venta_supermercados_autoservicios_mayoristas: number | null;
+  permisos_edificacion_unidades: number | null;
+  permisos_edificacion_m2: number | null;
 }
 
 export default function SemaforoPage() {
@@ -29,7 +31,7 @@ export default function SemaforoPage() {
         const res = await fetch(withBasePath(`/api/semaforo?tipo=${tipo}`));
         const json = await res.json();
         if (Array.isArray(json)) {
-          setData(json); // Carga todo el historial
+          setData(json);
         }
       } catch (err) {
         console.error('Error al cargar datos del semáforo:', err);
@@ -45,11 +47,10 @@ export default function SemaforoPage() {
     return Math.abs(rawVal) < 1 && rawVal !== 0 ? rawVal * 100 : rawVal;
   };
 
-  // Clasificación de los 6 niveles
   const getCellClass = (rawVal: number | null) => {
     const val = formatVal(rawVal);
     if (val === null) return styles.colorNeutral;
-    
+
     if (val < -5) return styles.redDark;        // Rojo Oscuro
     if (val < 0) return styles.redLight;        // Rojo Claro
     if (val <= 3) return styles.yellowLight;    // Amarillo Claro
@@ -65,17 +66,16 @@ export default function SemaforoPage() {
   };
 
   const formatFecha = (fechaStr: string) => {
-    const d = new Date(fechaStr);
-    if (isNaN(d.getTime())) return { trim: '-', mes: fechaStr };
-
-    const year = d.getFullYear().toString().slice(-2);
-    const monthIndex = d.getMonth();
-    const quarter = Math.floor(monthIndex / 3) + 1;
-
+    if (!fechaStr) return { trim: '-', mes: '-' };
+    const parts = fechaStr.split('-');
+    const yearShort = parts[0] ? parts[0].slice(-2) : '26';
+    const monthNum = parseInt(parts[1], 10);
+    const quarter = Math.floor((monthNum - 1) / 3) + 1;
     const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
     return {
-      trim: `T${quarter}-${year}`,
-      mes: meses[monthIndex]
+      trim: `T${quarter}-${yearShort}`,
+      mes: meses[monthNum - 1] || 'mes',
     };
   };
 
@@ -102,7 +102,7 @@ export default function SemaforoPage() {
       </div>
 
       {loading ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+        <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>
           Cargando datos del semáforo...
         </div>
       ) : (
@@ -110,17 +110,19 @@ export default function SemaforoPage() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Trimestre</th>
-                <th>Mes</th>
-                <th>Combustible Vendido</th>
-                <th>SIPA privado registrado</th>
-                <th>Exportaciones Aduana Corrientes (US$)</th>
-                <th>Exportaciones Aduana Corrientes (Tn.)</th>
-                <th>Pasajeros terminal Corrientes</th>
-                <th>Pasajeros Aeropuerto Corrientes</th>
-                <th>Patentamiento automóviles</th>
-                <th>Patentamiento motocicletas</th>
-                <th>Ventas autoservicios mayoristas</th>
+                <th style={{ width: '7%' }}>Trimestre</th>
+                <th style={{ width: '6%' }}>Mes</th>
+                <th style={{ width: '10%' }}>Combustible<br />Vendido</th>
+                <th style={{ width: '10.5%' }}>SIPA Privado<br />Registrado</th>
+                <th style={{ width: '11.5%' }}>Exportaciones<br />Aduana (US$)</th>
+                <th style={{ width: '11.5%' }}>Exportaciones<br />Aduana (Tn.)</th>
+                <th style={{ width: '10.5%' }}>Pasajeros<br />Terminal</th>
+                <th style={{ width: '10.5%' }}>Pasajeros<br />Aeropuerto</th>
+                <th style={{ width: '10.5%' }}>Patentamiento<br />Automóviles</th>
+                <th style={{ width: '10.5%' }}>Patentamiento<br />Motocicletas</th>
+                <th style={{ width: '11.5%' }}>Ventas Supermercados<br />Mayoristas</th>
+                <th style={{ width: '9.5%' }}>Permisos Edificación<br />(Unidades)</th>
+                <th style={{ width: '9.5%' }}>Permisos Edificación<br />(Superficie m²)</th>
               </tr>
             </thead>
             <tbody>
@@ -139,6 +141,8 @@ export default function SemaforoPage() {
                     <td className={getCellClass(row.patentamiento_0km_auto)}>{formatPercent(row.patentamiento_0km_auto)}</td>
                     <td className={getCellClass(row.patentamiento_0km_motocicleta)}>{formatPercent(row.patentamiento_0km_motocicleta)}</td>
                     <td className={getCellClass(row.venta_supermercados_autoservicios_mayoristas)}>{formatPercent(row.venta_supermercados_autoservicios_mayoristas)}</td>
+                    <td className={getCellClass(row.permisos_edificacion_unidades)}>{formatPercent(row.permisos_edificacion_unidades)}</td>
+                    <td className={getCellClass(row.permisos_edificacion_m2)}>{formatPercent(row.permisos_edificacion_m2)}</td>
                   </tr>
                 );
               })}

@@ -1,7 +1,7 @@
 'use client';
 
 import { withBasePath } from '../../../lib/basePath';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -37,7 +37,7 @@ const AVAILABLE_INDICATORS: IndicadorConfig[] = [
 
 export default function IndicadoresPaisPage() {
   const [viewMode, setViewMode] = useState<'montos' | 'mensual' | 'interanual'>('montos');
-  const [selectedYear, setSelectedYear] = useState<string>('TODOS');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('ULTIMOS_12'); // Por defecto últimos 12 meses
   const [activeIndicators, setActiveIndicators] = useState<string[]>(
     AVAILABLE_INDICATORS.filter((i) => i.defaultActive).map((i) => i.key)
   );
@@ -63,17 +63,25 @@ export default function IndicadoresPaisPage() {
     fetchData();
   }, []);
 
+  // Lista dinámica de años presentes en la base de datos
+  const availableYears = useMemo(() => {
+    if (!rawRows || rawRows.length === 0) return [];
+    const yearsSet = new Set<string>();
+    rawRows.forEach((r) => {
+      if (r.fecha) {
+        yearsSet.add(r.fecha.substring(0, 4));
+      }
+    });
+    return Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
+  }, [rawRows]);
+
   useEffect(() => {
     if (!rawRows || rawRows.length === 0) return;
 
-    const filtered = rawRows.filter((row) => {
-      const yearStr = row.fecha ? row.fecha.substring(0, 4) : '';
-      return selectedYear === 'TODOS' || yearStr === selectedYear;
-    });
-
+    // 1. Agrupar por mes
     const monthMap: { [key: string]: any } = {};
 
-    filtered.forEach((row) => {
+    rawRows.forEach((row) => {
       const monthKey = row.fecha ? row.fecha.substring(0, 7) : '';
       if (!monthKey) return;
 
@@ -110,8 +118,21 @@ export default function IndicadoresPaisPage() {
       .sort()
       .map((k) => monthMap[k]);
 
-    setChartData(sortedPoints);
-  }, [rawRows, viewMode, selectedYear]);
+    // 2. Aplicar filtro temporal
+    let filteredPoints = sortedPoints;
+
+    if (selectedPeriod === 'ULTIMOS_12') {
+      filteredPoints = sortedPoints.slice(-12);
+    } else if (selectedPeriod === 'ULTIMOS_24') {
+      filteredPoints = sortedPoints.slice(-24);
+    } else if (selectedPeriod === 'ULTIMOS_36') {
+      filteredPoints = sortedPoints.slice(-36);
+    } else if (selectedPeriod !== 'TODOS') {
+      filteredPoints = sortedPoints.filter((p) => p.fechaKey.startsWith(selectedPeriod));
+    }
+
+    setChartData(filteredPoints);
+  }, [rawRows, viewMode, selectedPeriod]);
 
   const toggleIndicator = (key: string) => {
     setActiveIndicators((prev) =>
@@ -156,20 +177,41 @@ export default function IndicadoresPaisPage() {
                 className={`${styles.modeBtn} ${viewMode === 'interanual' ? styles.modeBtnActive : ''}`}
                 onClick={() => setViewMode('interanual')}
               >
-                Var. i.a.
+                Var. interanual
               </button>
             </div>
 
-            <div className={styles.yearFilter}>
-              {['TODOS', '2024', '2025', '2026'].map((yr) => (
-                <button
-                  key={yr}
-                  className={`${styles.yearBtn} ${selectedYear === yr ? styles.yearBtnActive : ''}`}
-                  onClick={() => setSelectedYear(yr)}
-                >
-                  {yr === 'TODOS' ? 'Todos' : yr}
-                </button>
-              ))}
+            {/* Selector Desplegable de Período */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Período:</span>
+              <select
+                className={styles.selectFilter || ''}
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: '#ffffff',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+              >
+                <option value="ULTIMOS_12">Últimos 12 meses</option>
+                <option value="ULTIMOS_24">Últimos 2 años (24 m.)</option>
+                <option value="ULTIMOS_36">Últimos 3 años (36 m.)</option>
+                <optgroup label="Por Año Específico">
+                  {availableYears.map((yr) => (
+                    <option key={yr} value={yr}>
+                      Año {yr}
+                    </option>
+                  ))}
+                </optgroup>
+                <option value="TODOS">Toda la serie histórica</option>
+              </select>
             </div>
           </div>
 
@@ -179,17 +221,17 @@ export default function IndicadoresPaisPage() {
             </div>
           ) : (
             <div className={styles.chartScrollArea}>
-              <div className={styles.chartCanvas}>
+              <div className={styles.chartCanvas} style={{ height: '520px' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
+                  <LineChart data={chartData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="fechaLabel" tick={{ fontSize: 12 }} />
+                    <XAxis dataKey="fechaLabel" tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }} />
                     <YAxis
-                      tick={{ fontSize: 12 }}
+                      tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }}
                       tickFormatter={(v) => (viewMode === 'montos' ? `$${(v / 1000).toFixed(0)}k` : `${v}%`)}
                     />
                     <Tooltip formatter={formatTooltipValue} />
-                    <Legend />
+                    <Legend wrapperStyle={{ paddingTop: '10px' }} />
                     {AVAILABLE_INDICATORS.filter((i) => activeIndicators.includes(i.key)).map((ind) => (
                       <Line
                         key={ind.key}

@@ -15,41 +15,64 @@ export async function GET(request: NextRequest) {
     const client = await pool.connect();
     await client.query('SET search_path TO public;');
 
-    // 1. IPICorr (Corrientes) con todas sus aperturas
+    // 1. IPICorr (Corrientes)
     const qIpicorr = `
       SELECT 
         TO_CHAR(fecha, 'YYYY-MM-DD') as fecha,
-        vim_nivel_general as ipicorr_men,
-        var_ia_nivel_general as ipicorr_ia,
-        vim_alimentos as ipicorr_alim_men,
-        var_ia_alimentos as ipicorr_alim_ia,
-        vim_maderas as ipicorr_mad_men,
-        var_ia_maderas as ipicorr_mad_ia,
-        vim_metales as ipicorr_met_men,
-        var_ia_metales as ipicorr_met_ia,
-        vim_min_nometalicos as ipicorr_min_men,
-        var_ia_min_nometalicos as ipicorr_min_ia,
-        vim_textil as ipicorr_tex_men,
-        var_ia_textil as ipicorr_tex_ia
+        ROUND((CASE WHEN ABS(COALESCE(vim_nivel_general, 0)) < 1 AND COALESCE(vim_nivel_general, 0) != 0 THEN vim_nivel_general * 100 ELSE vim_nivel_general END)::numeric, 1) as ipicorr_men,
+        ROUND((CASE WHEN ABS(COALESCE(var_ia_nivel_general, 0)) < 1 AND COALESCE(var_ia_nivel_general, 0) != 0 THEN var_ia_nivel_general * 100 ELSE var_ia_nivel_general END)::numeric, 1) as ipicorr_ia,
+        ROUND((CASE WHEN ABS(COALESCE(vim_alimentos, 0)) < 1 AND COALESCE(vim_alimentos, 0) != 0 THEN vim_alimentos * 100 ELSE vim_alimentos END)::numeric, 1) as ipicorr_alim_men,
+        ROUND((CASE WHEN ABS(COALESCE(var_ia_alimentos, 0)) < 1 AND COALESCE(var_ia_alimentos, 0) != 0 THEN var_ia_alimentos * 100 ELSE var_ia_alimentos END)::numeric, 1) as ipicorr_alim_ia,
+        ROUND((CASE WHEN ABS(COALESCE(vim_maderas, 0)) < 1 AND COALESCE(vim_maderas, 0) != 0 THEN vim_maderas * 100 ELSE vim_maderas END)::numeric, 1) as ipicorr_mad_men,
+        ROUND((CASE WHEN ABS(COALESCE(var_ia_maderas, 0)) < 1 AND COALESCE(var_ia_maderas, 0) != 0 THEN var_ia_maderas * 100 ELSE var_ia_maderas END)::numeric, 1) as ipicorr_mad_ia,
+        ROUND((CASE WHEN ABS(COALESCE(vim_metales, 0)) < 1 AND COALESCE(vim_metales, 0) != 0 THEN vim_metales * 100 ELSE vim_metales END)::numeric, 1) as ipicorr_met_men,
+        ROUND((CASE WHEN ABS(COALESCE(var_ia_metales, 0)) < 1 AND COALESCE(var_ia_metales, 0) != 0 THEN var_ia_metales * 100 ELSE var_ia_metales END)::numeric, 1) as ipicorr_met_ia,
+        ROUND((CASE WHEN ABS(COALESCE(vim_min_nometalicos, 0)) < 1 AND COALESCE(vim_min_nometalicos, 0) != 0 THEN vim_min_nometalicos * 100 ELSE vim_min_nometalicos END)::numeric, 1) as ipicorr_min_men,
+        ROUND((CASE WHEN ABS(COALESCE(var_ia_min_nometalicos, 0)) < 1 AND COALESCE(var_ia_min_nometalicos, 0) != 0 THEN var_ia_min_nometalicos * 100 ELSE var_ia_min_nometalicos END)::numeric, 1) as ipicorr_min_ia,
+        ROUND((CASE WHEN ABS(COALESCE(vim_textil, 0)) < 1 AND COALESCE(vim_textil, 0) != 0 THEN vim_textil * 100 ELSE vim_textil END)::numeric, 1) as ipicorr_tex_men,
+        ROUND((CASE WHEN ABS(COALESCE(var_ia_textil, 0)) < 1 AND COALESCE(var_ia_textil, 0) != 0 THEN var_ia_textil * 100 ELSE var_ia_textil END)::numeric, 1) as ipicorr_tex_ia
       FROM ipicorr
       ORDER BY fecha ASC;
     `;
 
-    // 2. IPI Nación con variaciones
+    // 2. IPI Nación (Calcula o multiplica x100 las variaciones reales)
     const qIpi = `
       SELECT 
         TO_CHAR(fecha, 'YYYY-MM-DD') as fecha,
-        var_mensual_ipi_manufacturero as ipi_nac_men,
+        ROUND(COALESCE(
+          CASE WHEN ABS(var_mensual_ipi_manufacturero) < 1 AND var_mensual_ipi_manufacturero != 0 THEN var_mensual_ipi_manufacturero * 100 ELSE var_mensual_ipi_manufacturero END,
+          (((ipi_manufacturero - LAG(ipi_manufacturero, 1) OVER (ORDER BY fecha)) / NULLIF(LAG(ipi_manufacturero, 1) OVER (ORDER BY fecha), 0)) * 100)
+        )::numeric, 1) as ipi_nac_men,
         ROUND((((ipi_manufacturero - LAG(ipi_manufacturero, 12) OVER (ORDER BY fecha)) / NULLIF(LAG(ipi_manufacturero, 12) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as ipi_nac_ia,
-        var_mensual_alimentos as ipi_nac_alim_men,
+        
+        ROUND(COALESCE(
+          CASE WHEN ABS(var_mensual_alimentos) < 1 AND var_mensual_alimentos != 0 THEN var_mensual_alimentos * 100 ELSE var_mensual_alimentos END,
+          (((alimentos - LAG(alimentos, 1) OVER (ORDER BY fecha)) / NULLIF(LAG(alimentos, 1) OVER (ORDER BY fecha), 0)) * 100)
+        )::numeric, 1) as ipi_nac_alim_men,
         ROUND((((alimentos - LAG(alimentos, 12) OVER (ORDER BY fecha)) / NULLIF(LAG(alimentos, 12) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as ipi_nac_alim_ia,
-        var_mensual_maderas as ipi_nac_mad_men,
+
+        ROUND(COALESCE(
+          CASE WHEN ABS(var_mensual_maderas) < 1 AND var_mensual_maderas != 0 THEN var_mensual_maderas * 100 ELSE var_mensual_maderas END,
+          (((maderas - LAG(maderas, 1) OVER (ORDER BY fecha)) / NULLIF(LAG(maderas, 1) OVER (ORDER BY fecha), 0)) * 100)
+        )::numeric, 1) as ipi_nac_mad_men,
         ROUND((((maderas - LAG(maderas, 12) OVER (ORDER BY fecha)) / NULLIF(LAG(maderas, 12) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as ipi_nac_mad_ia,
-        var_mensual_textil as ipi_nac_tex_men,
+
+        ROUND(COALESCE(
+          CASE WHEN ABS(var_mensual_textil) < 1 AND var_mensual_textil != 0 THEN var_mensual_textil * 100 ELSE var_mensual_textil END,
+          (((textil - LAG(textil, 1) OVER (ORDER BY fecha)) / NULLIF(LAG(textil, 1) OVER (ORDER BY fecha), 0)) * 100)
+        )::numeric, 1) as ipi_nac_tex_men,
         ROUND((((textil - LAG(textil, 12) OVER (ORDER BY fecha)) / NULLIF(LAG(textil, 12) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as ipi_nac_tex_ia,
-        var_mensual_min_no_metalicos as ipi_nac_min_no_met_men,
+
+        ROUND(COALESCE(
+          CASE WHEN ABS(var_mensual_min_no_metalicos) < 1 AND var_mensual_min_no_metalicos != 0 THEN var_mensual_min_no_metalicos * 100 ELSE var_mensual_min_no_metalicos END,
+          (((min_no_metalicos - LAG(min_no_metalicos, 1) OVER (ORDER BY fecha)) / NULLIF(LAG(min_no_metalicos, 1) OVER (ORDER BY fecha), 0)) * 100)
+        )::numeric, 1) as ipi_nac_min_no_met_men,
         ROUND((((min_no_metalicos - LAG(min_no_metalicos, 12) OVER (ORDER BY fecha)) / NULLIF(LAG(min_no_metalicos, 12) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as ipi_nac_min_no_met_ia,
-        var_mensual_min_metales as ipi_nac_min_met_men,
+
+        ROUND(COALESCE(
+          CASE WHEN ABS(var_mensual_min_metales) < 1 AND var_mensual_min_metales != 0 THEN var_mensual_min_metales * 100 ELSE var_mensual_min_metales END,
+          (((min_metales - LAG(min_metales, 1) OVER (ORDER BY fecha)) / NULLIF(LAG(min_metales, 1) OVER (ORDER BY fecha), 0)) * 100)
+        )::numeric, 1) as ipi_nac_min_met_men,
         ROUND((((min_metales - LAG(min_metales, 12) OVER (ORDER BY fecha)) / NULLIF(LAG(min_metales, 12) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as ipi_nac_min_met_ia
       FROM ipi
       ORDER BY fecha ASC;
@@ -59,8 +82,8 @@ export async function GET(request: NextRequest) {
     const qEmae = `
       SELECT 
         TO_CHAR(fecha, 'YYYY-MM-DD') as fecha,
-        variacion_mensual as emae_men,
-        variacion_interanual as emae_ia
+        ROUND((CASE WHEN ABS(COALESCE(variacion_mensual, 0)) < 1 AND COALESCE(variacion_mensual, 0) != 0 THEN variacion_mensual * 100 ELSE variacion_mensual END)::numeric, 1) as emae_men,
+        ROUND((CASE WHEN ABS(COALESCE(variacion_interanual, 0)) < 1 AND COALESCE(variacion_interanual, 0) != 0 THEN variacion_interanual * 100 ELSE variacion_interanual END)::numeric, 1) as emae_ia
       FROM emae_variaciones
       ORDER BY fecha ASC;
     `;

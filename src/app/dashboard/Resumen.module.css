@@ -1,11 +1,10 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  max-width: 1650px;
+  gap: 14px;
+  max-width: 1600px;
   margin: 0 auto;
-  height: calc(100vh - 82px);
-  overflow: hidden; /* Cero scroll en la ventana */
+  padding: 0 4px 20px 4px;
   box-sizing: border-box;
 }
 
@@ -13,46 +12,43 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  padding-bottom: 2px;
 }
 
 .titleGroup h1 {
   margin: 0;
-  font-size: 1.45rem;
+  font-size: 1.4rem;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.02em;
 }
 
-/* GRID 2X2 SIN SCROLL */
+/* GRID 2X2 CON CARDS MÁS ALTAS Y EQUILIBRADAS */
 .gridCards {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: 14px;
-  flex: 1;
-  min-height: 0;
+  gap: 22px;
+  padding-top: 20px;
+  align-items: stretch;
 }
 
 .card {
   background: #ffffff;
   border-radius: 18px;
   border: 1px solid #cbd5e1;
-  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
   overflow: visible;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  min-height: 330px; /* Le da el alto suficiente para que respire */
 }
 
 .cardHeader {
   background-color: #14203b;
   color: #ffffff;
-  padding: 8px 18px;
+  padding: 10px 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-shrink: 0;
   border-top-left-radius: 17px;
   border-top-right-radius: 17px;
 }
@@ -61,7 +57,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 800;
 }
 
@@ -72,25 +68,26 @@
   font-style: italic;
 }
 
+/* CUERPO HOLGADO Y DISTRIBUIDO */
 .cardBody {
-  padding: 8px 16px;
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: space-around; /* Reparte las 4 filas de forma suave */
   flex: 1;
-  gap: 4px;
-  min-height: 0;
+  gap: 10px;
   overflow: visible;
 }
 
 .indicatorRow {
   display: grid;
-  grid-template-columns: 42px 1.25fr 1fr 1fr 1fr 28px;
+  grid-template-columns: 40px 1.25fr 1fr 1fr 1fr 22px;
   align-items: center;
   gap: 10px;
-  padding: 2px 0;
+  padding: 4px 0;
 }
 
+/* MAPAS CIRCULARES */
 .mapIconCircle {
   position: relative;
   width: 36px;
@@ -102,6 +99,10 @@
   flex-shrink: 0;
   cursor: pointer;
   z-index: 10;
+}
+
+.mapIconCircle:hover {
+  z-index: 999;
 }
 
 .mapImgWrapper {
@@ -124,13 +125,13 @@
   display: block;
 }
 
-/* Tooltip flotante nativo CSS */
+/* TOOLTIP FLOTANTE */
 .mapTooltip {
   visibility: hidden;
   opacity: 0;
   position: absolute;
-  bottom: calc(100% + 8px);
-  left: 0; /* Anclado al borde izquierdo del círculo para que no se corte contra el marco de la pantalla */
+  bottom: calc(100% + 6px);
+  left: 0;
   background-color: #0f172a;
   color: #ffffff;
   font-size: 0.72rem;
@@ -138,9 +139,9 @@
   white-space: nowrap;
   padding: 5px 10px;
   border-radius: 6px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: opacity 0.15s ease, transform 0.15s ease;
-  transform: translateY(4px);
+  transform: translateY(3px);
   pointer-events: none;
   z-index: 9999;
 }
@@ -150,24 +151,15 @@
   position: absolute;
   top: 100%;
   left: 14px;
-  border-width: 5px;
+  border-width: 4px;
   border-style: solid;
   border-color: #0f172a transparent transparent transparent;
-}
-
-.mapIconCircle:hover {
-  z-index: 999; /* Trae el círculo activo y su tooltip al frente absoluto */
 }
 
 .mapIconCircle:hover .mapTooltip {
   visibility: visible;
   opacity: 1;
   transform: translateY(0);
-}
-
-.mapIconCorrientes {
-  background-color: #84cc16;
-  color: #14532d;
 }
 
 .metricCol {
@@ -181,7 +173,7 @@
   font-size: 1rem;
   font-weight: 800;
   color: #0f172a;
-  line-height: 1.1;
+  line-height: 1.15;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -191,7 +183,7 @@
   font-size: 0.65rem;
   color: #64748b;
   font-weight: 600;
-  margin-top: 1px;
+  margin-top: 2px;
   white-space: nowrap;
 }
 
@@ -214,53 +206,7 @@
 }
 
 @media (max-width: 1024px) {
-  .container {
-    height: auto;
-    overflow: visible;
-  }
-
   .gridCards {
     grid-template-columns: 1fr;
-    grid-template-rows: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .titleGroup h1 {
-    font-size: 1.2rem;
-  }
-
-  .cardHeader {
-    padding: 10px 12px;
-  }
-
-  .cardTitle {
-    font-size: 0.82rem;
-  }
-
-  .cardBody {
-    padding: 10px 12px;
-  }
-
-  .indicatorRow {
-    grid-template-columns: 36px 1fr 1fr 28px;
-    gap: 8px;
-    padding: 6px 0;
-  }
-
-  .indicatorRow > .metricCol:nth-of-type(4) {
-    display: none;
-  }
-
-  .metricVal {
-    font-size: 0.85rem;
-  }
-
-  .metricLabel {
-    font-size: 0.58rem;
-  }
-
-  .sparklineContainer {
-    display: none;
   }
 }

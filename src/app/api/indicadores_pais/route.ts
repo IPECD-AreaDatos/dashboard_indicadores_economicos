@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
     const client = await pool.connect();
     await client.query('SET search_path TO public;');
 
-    // Normalizamos todas las fuentes al primer día de cada mes (YYYY-MM-01)
     const query = `
       WITH 
       ripte_m AS (
@@ -94,10 +93,11 @@ export async function GET(request: NextRequest) {
         SELECT 
           DATE_TRUNC('month', fecha)::date as fecha_m,
           AVG(valor) as ipc_val,
-          AVG(var_mensual) as ipc_men,
-          AVG(var_interanual) as ipc_ia
+          ROUND((AVG(COALESCE(var_mensual, 0)) * 100)::numeric, 1) as ipc_men,
+          ROUND((AVG(COALESCE(var_interanual, 0)) * 100)::numeric, 1) as ipc_ia
         FROM ipc
-        WHERE id_region IS NULL OR id_region = 0 OR id_region = 1
+        WHERE (id_region IS NULL OR id_region = 0 OR id_region = 1)
+          AND (id_division = 1 OR id_subdivision IS NULL OR id_subdivision = 1)
         GROUP BY 1
       ),
       all_months AS (

@@ -20,16 +20,18 @@ export async function GET(request: NextRequest) {
     const client = await pool.connect();
     const query = `
       SELECT 
-        fecha,
+        TO_CHAR(fecha, 'YYYY-MM-DD') as fecha,
         combustible_vendido,
-        patentamiento_0km_auto,
-        patentamiento_0km_motocicleta,
-        pasajeros_salidos_terminal_corrientes,
-        pasajeros_aeropuerto_corrientes,
-        venta_supermercados_autoservicios_mayoristas,
+        empleo_privado_registrado_sipa,
         exportaciones_aduana_corrientes_dolares,
         exportaciones_aduana_corrientes_toneladas,
-        empleo_privado_registrado_sipa
+        pasajeros_salidos_terminal_corrientes,
+        pasajeros_aeropuerto_corrientes,
+        patentamiento_0km_auto,
+        patentamiento_0km_motocicleta,
+        venta_supermercados_autoservicios_mayoristas,
+        permisos_edificacion_unidades,
+        permisos_edificacion_m2
       FROM ${tabla}
       ORDER BY fecha DESC;
     `;
