@@ -15,7 +15,7 @@ import styles from './Pbg.module.css';
 
 export default function PbgPage() {
   const [freq, setFreq] = useState<'anual' | 'trimestral'>('anual');
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('ULTIMOS_5'); // Por defecto últimos 5 años
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('ULTIMOS_5');
   const [dataAnual, setDataAnual] = useState<any[]>([]);
   const [dataTrimestral, setDataTrimestral] = useState<any[]>([]);
   const [desglosado, setDesglosado] = useState<any[]>([]);
@@ -42,7 +42,7 @@ export default function PbgPage() {
         if (json.trimestral) {
           const formattedTrim = json.trimestral.map((r: any) => ({
             anio: String(r.anio),
-            label: `${r.anio}-T${r.trimestre}`,
+            label: `${r.anio}-${r.trimestre.startsWith('T') ? r.trimestre : `T${r.trimestre}`}`,
             valor: Number(r.valor) || 0,
             variacion: Number(r.variacion) || 0,
           }));
@@ -64,7 +64,6 @@ export default function PbgPage() {
     fetchData();
   }, []);
 
-  // Lista de años disponibles para el filtro
   const availableYears = useMemo(() => {
     const list = freq === 'anual' ? dataAnual : dataTrimestral;
     const yearsSet = new Set<string>();
@@ -74,7 +73,6 @@ export default function PbgPage() {
     return Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
   }, [freq, dataAnual, dataTrimestral]);
 
-  // Filtrado de la serie activa según el período seleccionado
   const filteredChartData = useMemo(() => {
     const source = freq === 'anual' ? dataAnual : dataTrimestral;
     if (source.length === 0) return [];
@@ -212,12 +210,14 @@ export default function PbgPage() {
 
         {/* KPIs Lateral */}
         <div className={styles.kpiColumn}>
-          <div className={styles.dateDisplay}>Año {lastItem?.label || '2024'}</div>
+          <div className={styles.dateDisplay}>
+            {freq === 'anual' ? `Año ${lastItem?.label || '2024'}` : `Período ${lastItem?.label || '2023-TIV'}`}
+          </div>
 
           <div className={styles.kpiCard}>
             <div className={styles.kpiSubtitle}>Valor Agregado Bruto Total</div>
             <div className={styles.kpiMainVal}>
-              ${lastItem ? (lastItem.valor / 1000).toLocaleString('es-AR', { maximumFractionDigits: 2 }) : '10.787,90'} mill.
+              ${lastItem ? (lastItem.valor / 1000).toLocaleString('es-AR', { maximumFractionDigits: 2 }) : '-'} mill.
             </div>
             <div className={styles.kpiSubtitle}>A Precios Constantes del 2004</div>
           </div>
@@ -228,7 +228,7 @@ export default function PbgPage() {
               className={styles.kpiMainVal}
               style={{ color: (lastItem?.variacion || 0) >= 0 ? '#16a34a' : '#dc2626' }}
             >
-              {lastItem ? `${lastItem.variacion > 0 ? '+' : ''}${lastItem.variacion.toFixed(1)}%` : '-2.7%'}
+              {lastItem ? `${lastItem.variacion > 0 ? '+' : ''}${lastItem.variacion.toFixed(1)}%` : '-'}
             </div>
             <div className={styles.kpiSubtitle}>Respecto al período anterior</div>
           </div>

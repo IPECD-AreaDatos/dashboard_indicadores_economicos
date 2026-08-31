@@ -22,10 +22,11 @@ export async function GET(request: NextRequest) {
     const qFechas = `
       SELECT DISTINCT TO_CHAR(fecha, 'YYYY-MM-DD') as fecha 
       FROM srt 
+      WHERE fecha IS NOT NULL
       ORDER BY fecha DESC;
     `;
 
-    // 2. Sectores únicos (descripción limpia)
+    // 2. Sectores únicos
     const qSectores = `
       SELECT DISTINCT desc_seccion as sector 
       FROM dicc_srt 
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
       ORDER BY desc_seccion ASC;
     `;
 
-    // 3. Regiones reales (excluyendo cualquier etiqueta de Nación)
+    // 3. Regiones reales (excluyendo Nación)
     const qRegiones = `
       SELECT DISTINCT reg.id_region, reg.nombre_region 
       FROM dicc_region reg 
@@ -51,16 +52,32 @@ export async function GET(request: NextRequest) {
     const fechasDisponibles = resFechas.rows.map((r) => r.fecha);
     const fechaTarget = fechaParam || fechasDisponibles[0];
 
-    // 4. Consulta optimizada usando remuneracion y cant_personas_trabaj_up
+    // 4. Agrupación precisa: aseguramos la masa salarial real
     const qData = `
-      WITH srt_mes AS (
+      WITH srt_clean AS (
         SELECT 
           id_provincia,
           id_seccion,
-          SUM(COALESCE(cant_personas_trabaj_up, 0)) as trabajadores,
-          SUM(COALESCE(remuneracion, salario, 0)) as masa_salarial
+          COALESCE(cant_personas_trabaj_up, 0) as trabajadores,
+          CASE 
+            WHEN COALESCE(remuneracion, 0) > 0 AND remuneracion >= COALESCE(salario, 0) 
+            THEN remuneracion
+            WHEN COALESCE(salario, 0) > 0 
+            THEN salario * COALESCE(cant_personas_trabaj_up, 0)
+            ELSE COALESCE(remuneracion, 0)
+          END as masa_salarial
         FROM srt
         WHERE fecha = $1::date
+          AND id_provincia IS NOT NULL 
+          AND id_provincia > 0
+      ),
+      srt_mes AS (
+        SELECT 
+          id_provincia,
+          id_seccion,
+          SUM(trabajadores) as trabajadores,
+          SUM(masa_salarial) as masa_salarial
+        FROM srt_clean
         GROUP BY id_provincia, id_seccion
       )
       SELECT 
@@ -77,12 +94,13 @@ export async function GET(request: NextRequest) {
           ELSE 0 
         END as salario_promedio
       FROM srt_mes s
-      LEFT JOIN dicc_provincia prov ON s.id_provincia = prov.id_provincia
+      JOIN dicc_provincia prov ON s.id_provincia = prov.id_provincia
       LEFT JOIN dicc_region reg ON prov.id_region = reg.id_region
       LEFT JOIN (
         SELECT DISTINCT id_seccion, desc_seccion 
         FROM dicc_srt
-      ) d ON s.id_seccion = d.id_seccion;
+      ) d ON s.id_seccion = d.id_seccion
+      WHERE prov.nombre_provincia IS NOT NULL;
     `;
 
     const resData = await client.query(qData, [fechaTarget]);

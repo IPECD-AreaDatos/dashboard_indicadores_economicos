@@ -65,11 +65,13 @@ export default function EmpleoProvincialPage() {
     if (!rawData || rawData.length === 0) return;
 
     const filtered = rawData.filter((r) => {
+      // Excluir cualquier registro sin provincia o con id_provincia <= 0
+      const isValidProv = r.nombre_provincia && r.id_provincia > 0;
       const matchRegion =
         selectedRegion === 'TODAS' ||
         r.nombre_region?.trim().toUpperCase() === selectedRegion.trim().toUpperCase();
       const matchSector = selectedSectores.length === 0 || selectedSectores.includes(r.sector);
-      return matchRegion && matchSector;
+      return isValidProv && matchRegion && matchSector;
     });
 
     const provGroup: {
@@ -77,7 +79,7 @@ export default function EmpleoProvincialPage() {
     } = {};
 
     filtered.forEach((r) => {
-      const p = r.nombre_provincia || `Prov_${r.id_provincia}`;
+      const p = r.nombre_provincia;
       const trab = Number(r.trabajadores) || 0;
       const masa = Number(r.masa_salarial) || Number(r.salario_promedio) * trab || 0;
 

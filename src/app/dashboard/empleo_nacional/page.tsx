@@ -1,7 +1,7 @@
 'use client';
 
 import { withBasePath } from '../../../lib/basePath';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -17,32 +17,42 @@ import {
 import { ArrowRight } from 'lucide-react';
 import styles from './Sipa.module.css';
 
+function norm(str?: string) {
+  if (!str) return '';
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toUpperCase();
+}
+
 const DICC_REGISTROS: { [key: number]: string } = {
-  1: 'Empleo',
-  2: 'Sector Privado',
-  3: 'Sector Público',
-  4: 'Empleo en casas particulares',
-  5: 'Autónomos',
-  6: 'Monotributo',
-  7: 'Monotributo Social',
-  8: 'Total',
+  1: 'Asalariados Sector Privado',
+  2: 'Asalariados Sector Público',
+  3: 'Casas Particulares',
+  4: 'Autónomos',
+  5: 'Monotributo',
+  6: 'Monotributo Social',
+  7: 'Otros',
+  8: 'Total Registrado',
 };
 
 const COLOR_PALETTE = [
-  '#15803d', // Verde Corrientes
-  '#b45309', // Ámbar Chaco
-  '#1d4ed8', // Azul Formosa
-  '#d97706', // Naranja Misiones
+  '#15803d', // Verde
+  '#b45309', // Ámbar
+  '#1d4ed8', // Azul
+  '#d97706', // Naranja
   '#7c3aed',
   '#0284c7',
   '#e11d48',
+  '#475569',
 ];
 
 export default function EmpleoNacionalPage() {
-  const [activeTab, setActiveTab] = useState<'nacion' | 'tipo-registro' | 'provincias'>('provincias');
-  const [selectedYear, setSelectedYear] = useState<string>('TODOS');
+  const [activeTab, setActiveTab] = useState<'nacion' | 'tipo-registro' | 'provincias'>('nacion');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('ULTIMOS_12');
   const [selectedFecha, setSelectedFecha] = useState<string>('');
-  const [selectedRegion, setSelectedRegion] = useState<string>('NEA');
+  const [selectedRegion, setSelectedRegion] = useState<string>('Nación');
 
   const [rawProvincias, setRawProvincias] = useState<any[]>([]);
   const [rawNacion, setRawNacion] = useState<any[]>([]);
@@ -73,11 +83,9 @@ export default function EmpleoNacionalPage() {
             setSelectedFecha(json.fechasDisponibles[0]);
           }
 
-          const neaReg = json.regiones?.find((r: any) => r.nombre_region?.toUpperCase() === 'NEA');
-          if (neaReg) {
-            setSelectedRegion(neaReg.nombre_region);
-          } else if (json.regiones?.length > 0) {
-            setSelectedRegion(json.regiones[0].nombre_region);
+          if (json.regiones?.length > 0) {
+            const defaultReg = json.regiones.find((r: any) => norm(r.nombre_region) === 'NACION') || json.regiones[0];
+            setSelectedRegion(defaultReg.nombre_region);
           }
         }
       } catch (err) {
@@ -89,23 +97,31 @@ export default function EmpleoNacionalPage() {
     fetchData();
   }, []);
 
-  // Procesar serie provincial
+  const availableYears = useMemo(() => {
+    const yearsSet = new Set<string>();
+    const all = [...rawProvincias, ...rawNacion];
+    all.forEach((r) => {
+      if (r.fecha) yearsSet.add(r.fecha.substring(0, 4));
+    });
+    return Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
+  }, [rawProvincias, rawNacion]);
+
+  // 1. Serie Provincial
   useEffect(() => {
     if (!rawProvincias || rawProvincias.length === 0) return;
+
+    const targetReg = norm(selectedRegion);
+    const isNacion = targetReg.includes('NACION') || targetReg === '';
 
     const grouped: { [key: string]: any } = {};
     const provSet = new Set<string>();
 
     rawProvincias.forEach((row) => {
-      if (
-        selectedRegion !== 'TODAS' &&
-        row.nombre_region?.toUpperCase() !== selectedRegion.toUpperCase()
-      ) {
-        return;
-      }
+      const rowReg = norm(row.nombre_region);
+      const isRowNacion = Number(row.id_provincia) === 1 || Number(row.id_region) === 1 || rowReg.includes('NACION');
 
-      const yearStr = row.fecha ? row.fecha.substring(0, 4) : '';
-      if (selectedYear !== 'TODOS' && yearStr !== selectedYear) return;
+      const matchRegion = isNacion ? isRowNacion : rowReg === targetReg && Number(row.id_provincia) !== 1;
+      if (!matchRegion) return;
 
       const dateParts = row.fecha.split('-');
       const yearShort = dateParts[0] ? dateParts[0].slice(-2) : '';
@@ -118,27 +134,38 @@ export default function EmpleoNacionalPage() {
         grouped[row.fecha] = { fechaLabel: label, originalFecha: row.fecha };
       }
 
-      const provName = row.nombre_provincia || `Prov_${row.id_provincia}`;
+      const provName = isRowNacion ? 'Nación' : row.nombre_provincia || `Prov_${row.id_provincia}`;
       provSet.add(provName);
 
-      const puestosVal = Number(row.cantidad_sin_estacionalidad || row.cantidad_con_estacionalidad) || 0;
-      grouped[row.fecha][provName] = puestosVal > 1000 ? +(puestosVal / 1000).toFixed(1) : +puestosVal.toFixed(1);
+      // Los datos vienen en miles (ej: 75.6 o 6106.5)
+      const rawVal = Number(row.cantidad_con_estacionalidad || row.cantidad_sin_estacionalidad) || 0;
+      grouped[row.fecha][provName] = +rawVal.toFixed(1);
     });
 
-    setChartDataProv(Object.values(grouped));
-    setActiveProvinces(Array.from(provSet));
-  }, [rawProvincias, selectedYear, selectedRegion]);
+    const sortedPoints = Object.keys(grouped)
+      .sort()
+      .map((k) => grouped[k]);
 
-  // Procesar serie nacional
+    let filteredPoints = sortedPoints;
+    if (selectedPeriod === 'ULTIMOS_12') {
+      filteredPoints = sortedPoints.slice(-12);
+    } else if (selectedPeriod === 'ULTIMOS_24') {
+      filteredPoints = sortedPoints.slice(-24);
+    } else if (selectedPeriod === 'ULTIMOS_36') {
+      filteredPoints = sortedPoints.slice(-36);
+    } else if (selectedPeriod !== 'TODOS') {
+      filteredPoints = sortedPoints.filter((p) => p.originalFecha?.startsWith(selectedPeriod));
+    }
+
+    setChartDataProv(filteredPoints);
+    setActiveProvinces(Array.from(provSet));
+  }, [rawProvincias, selectedPeriod, selectedRegion]);
+
+  // 2. Serie Nacional (Total Registrado)
   useEffect(() => {
     if (!rawNacion || rawNacion.length === 0) return;
 
-    const filtered = rawNacion.filter((row) => {
-      const yearStr = row.fecha ? row.fecha.substring(0, 4) : '';
-      return selectedYear === 'TODOS' || yearStr === selectedYear;
-    });
-
-    const formatted = filtered.map((row) => {
+    const formatted = rawNacion.map((row) => {
       const dateParts = row.fecha.split('-');
       const yearShort = dateParts[0] ? dateParts[0].slice(-2) : '';
       const monthNum = parseInt(dateParts[1], 10);
@@ -146,18 +173,31 @@ export default function EmpleoNacionalPage() {
       const monthLabel = monthsEs[monthNum - 1] || 'mes';
 
       const totalVal = Number(row.total_puestos) || 0;
+
       return {
+        originalFecha: row.fecha,
         fechaLabel: `${monthLabel}-${yearShort}`,
-        Total: totalVal > 1000 ? +(totalVal / 1000).toFixed(1) : +totalVal.toFixed(1),
+        Total: +totalVal.toFixed(1),
         var_mensual: Number(row.var_mensual) || 0,
         var_interanual: Number(row.var_interanual) || 0,
       };
     });
 
-    setChartDataNacion(formatted);
-  }, [rawNacion, selectedYear]);
+    let filtered = formatted;
+    if (selectedPeriod === 'ULTIMOS_12') {
+      filtered = formatted.slice(-12);
+    } else if (selectedPeriod === 'ULTIMOS_24') {
+      filtered = formatted.slice(-24);
+    } else if (selectedPeriod === 'ULTIMOS_36') {
+      filtered = formatted.slice(-36);
+    } else if (selectedPeriod !== 'TODOS') {
+      filtered = formatted.filter((p) => p.originalFecha?.startsWith(selectedPeriod));
+    }
 
-  // Procesar desglose por tipo de registro para la fecha activa
+    setChartDataNacion(filtered);
+  }, [rawNacion, selectedPeriod]);
+
+  // 3. Desglose por registro
   useEffect(() => {
     if (!rawRegistros || rawRegistros.length === 0 || !selectedFecha) return;
 
@@ -169,7 +209,7 @@ export default function EmpleoNacionalPage() {
         return {
           id,
           tipo: DICC_REGISTROS[id] || `Registro ${id}`,
-          cantidadMil: +(val / 1000).toFixed(1),
+          cantidadMil: +val.toFixed(1),
         };
       })
       .sort((a, b) => b.cantidadMil - a.cantidadMil);
@@ -186,31 +226,60 @@ export default function EmpleoNacionalPage() {
     return `${monthsEs[monthNum - 1] || ''}-${dateParts[0].slice(-2)}`;
   };
 
-  // KPIs Provinciales
-  const rowsFechaProv = rawProvincias.filter(
-    (r) =>
-      r.fecha === selectedFecha &&
-      (selectedRegion === 'TODAS' || r.nombre_region?.toUpperCase() === selectedRegion.toUpperCase())
-  );
+  // KPIs
+  const targetReg = norm(selectedRegion);
+  const isNacionSelected = targetReg.includes('NACION') || targetReg === '';
+
+  const rowsFechaProv = rawProvincias.filter((r) => {
+    const rowReg = norm(r.nombre_region);
+    const isRowNacion = Number(r.id_provincia) === 1 || Number(r.id_region) === 1 || rowReg.includes('NACION');
+    return r.fecha === selectedFecha && (isNacionSelected ? isRowNacion : rowReg === targetReg && Number(r.id_provincia) !== 1);
+  });
+
   const corrientes = rawProvincias.find(
-    (r) => r.fecha === selectedFecha && r.nombre_provincia?.toLowerCase() === 'corrientes'
+    (r) => r.fecha === selectedFecha && norm(r.nombre_provincia) === 'CORRIENTES'
   );
-  const sumPuestos = rowsFechaProv.reduce((acc, curr) => acc + (Number(curr.cantidad_sin_estacionalidad) || 0), 0);
-  const avgPuestos = rowsFechaProv.length > 0 ? sumPuestos / rowsFechaProv.length : 0;
-  const avgVarInter = rowsFechaProv.length > 0
+
+  const nacionRow = rawProvincias.find(
+    (r) => r.fecha === selectedFecha && (Number(r.id_provincia) === 1 || norm(r.nombre_provincia).includes('NACION'))
+  );
+
+  const sumPuestos = rowsFechaProv.reduce((acc, curr) => {
+    return acc + (Number(curr.cantidad_con_estacionalidad || curr.cantidad_sin_estacionalidad) || 0);
+  }, 0);
+
+  const displayRegionalPuestos = isNacionSelected
+    ? Number(nacionRow?.cantidad_con_estacionalidad || nacionRow?.cantidad_sin_estacionalidad || sumPuestos)
+    : rowsFechaProv.length > 0
+    ? sumPuestos / rowsFechaProv.length
+    : 0;
+
+  const avgVarInter = isNacionSelected
+    ? Number(nacionRow?.var_interanual || 0)
+    : rowsFechaProv.length > 0
     ? rowsFechaProv.reduce((acc, curr) => acc + (Number(curr.var_interanual) || 0), 0) / rowsFechaProv.length
     : 0;
-  const avgVarMen = rowsFechaProv.length > 0
+
+  const avgVarMen = isNacionSelected
+    ? Number(nacionRow?.var_mensual || 0)
+    : rowsFechaProv.length > 0
     ? rowsFechaProv.reduce((acc, curr) => acc + (Number(curr.var_mensual) || 0), 0) / rowsFechaProv.length
     : 0;
 
-  // KPIs Nacionales
+  // Total Nación en Millones (dividido por 1000 porque viene en miles)
   const rowNacionAct = rawNacion.find((r) => r.fecha === selectedFecha);
-  const totalNacionMillones = rowNacionAct ? (Number(rowNacionAct.total_puestos) / 1000000).toFixed(1) : '12.8';
+  const totalNacionMillones = rowNacionAct
+    ? (Number(rowNacionAct.total_puestos) / 1000).toFixed(2).replace('.', ',')
+    : '-';
+
+  const formatPuestosVal = (val?: number) => {
+    if (val === undefined || val === null) return '-';
+    return Number(val).toFixed(1).replace('.', ',');
+  };
 
   return (
     <div className={styles.container}>
-      {/* Header y Control de Sub-Tabs */}
+      {/* Header */}
       <div className={styles.header}>
         <div className={styles.titleGroup}>
           <h1>EMPLEO REGISTRADO</h1>
@@ -218,7 +287,6 @@ export default function EmpleoNacionalPage() {
         </div>
 
         <div className={styles.topControls}>
-          {/* Sub Tabs */}
           <div className={styles.tabsContainer}>
             <button
               className={`${styles.tabBtn} ${activeTab === 'nacion' ? styles.tabBtnActive : ''}`}
@@ -240,7 +308,6 @@ export default function EmpleoNacionalPage() {
             </button>
           </div>
 
-          {/* Filtro Región (solo en vista provincial) */}
           {activeTab === 'provincias' && (
             <select
               className={styles.selectFilter}
@@ -255,7 +322,6 @@ export default function EmpleoNacionalPage() {
             </select>
           )}
 
-          {/* Selector Fecha Global */}
           <select
             className={styles.selectFilter}
             value={selectedFecha}
@@ -275,22 +341,41 @@ export default function EmpleoNacionalPage() {
         <div className={styles.chartCard}>
           <div className={styles.chartHeader}>
             <div className={styles.badgeCategory}>
-              {activeTab === 'nacion' && 'Evolución mensual empleo registrado (en miles)'}
+              {activeTab === 'nacion' && 'Evolución mensual empleo registrado nacional (en miles)'}
               {activeTab === 'tipo-registro' && 'Análisis por tipo de registro (en miles)'}
               {activeTab === 'provincias' && `Empleo privado por provincia (${selectedRegion})`}
             </div>
 
             {activeTab !== 'tipo-registro' && (
-              <div className={styles.yearFilter}>
-                {['TODOS', '2023', '2024', '2025', '2026'].map((yr) => (
-                  <button
-                    key={yr}
-                    className={`${styles.yearBtn} ${selectedYear === yr ? styles.yearBtnActive : ''}`}
-                    onClick={() => setSelectedYear(yr)}
-                  >
-                    {yr === 'TODOS' ? 'Todos' : yr}
-                  </button>
-                ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Período:</span>
+                <select
+                  value={selectedPeriod}
+                  onChange={(e) => setSelectedPeriod(e.target.value)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: '#ffffff',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    color: '#0f172a',
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                >
+                  <option value="ULTIMOS_12">Últimos 12 meses</option>
+                  <option value="ULTIMOS_24">Últimos 2 años (24 m.)</option>
+                  <option value="ULTIMOS_36">Últimos 3 años (36 m.)</option>
+                  <optgroup label="Por Año Específico">
+                    {availableYears.map((yr) => (
+                      <option key={yr} value={yr}>
+                        Año {yr}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <option value="TODOS">Toda la serie histórica</option>
+                </select>
               </div>
             )}
           </div>
@@ -301,16 +386,16 @@ export default function EmpleoNacionalPage() {
             </div>
           ) : (
             <div className={styles.chartScrollArea}>
-              <div className={styles.chartCanvas}>
+              <div className={styles.chartCanvas} style={{ height: '520px' }}>
                 {/* 1. GRÁFICO NACIONAL */}
                 {activeTab === 'nacion' && (
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartDataNacion}>
+                    <LineChart data={chartDataNacion} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                      <XAxis dataKey="fechaLabel" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip formatter={(v: number) => [`${v.toLocaleString('es-AR')} mil`, 'Total']} />
-                      <Line type="monotone" dataKey="Total" stroke="#15803d" strokeWidth={3} dot={{ r: 4 }} />
+                      <XAxis dataKey="fechaLabel" tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }} />
+                      <YAxis tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }} unit="k" domain={['dataMin - 500', 'dataMax + 500']} />
+                      <Tooltip formatter={(v: number) => [`${(v / 1000).toFixed(2).replace('.', ',')} mill. (${Math.round(v).toLocaleString('es-AR')} mil puestos)`, 'Total Registrado']} />
+                      <Line type="monotone" dataKey="Total" stroke="#15803d" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
@@ -318,12 +403,12 @@ export default function EmpleoNacionalPage() {
                 {/* 2. GRÁFICO BARRAS POR REGISTRO */}
                 {activeTab === 'tipo-registro' && (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartDataRegistros} layout="vertical" margin={{ left: 120, right: 30 }}>
+                    <BarChart data={chartDataRegistros} layout="vertical" margin={{ left: 180, right: 30, top: 10, bottom: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
                       <XAxis type="number" tick={{ fontSize: 11 }} />
-                      <YAxis dataKey="tipo" type="category" tick={{ fontSize: 11, fontWeight: 600 }} />
+                      <YAxis dataKey="tipo" type="category" tick={{ fontSize: 11, fontWeight: 600 }} width={170} />
                       <Tooltip formatter={(v: number) => [`${v.toLocaleString('es-AR')} mil puestos`, 'Cantidad']} />
-                      <Bar dataKey="cantidadMil" fill="#14203b" radius={[0, 6, 6, 0]} />
+                      <Bar dataKey="cantidadMil" fill="#14203b" radius={[0, 6, 6, 0]} barSize={18} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -331,12 +416,17 @@ export default function EmpleoNacionalPage() {
                 {/* 3. GRÁFICO PROVINCIAL */}
                 {activeTab === 'provincias' && (
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartDataProv}>
+                    <LineChart data={chartDataProv} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                      <XAxis dataKey="fechaLabel" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip formatter={(v: number) => [`${v.toLocaleString('es-AR')} mil`, 'Puestos']} />
-                      <Legend />
+                      <XAxis dataKey="fechaLabel" tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }} />
+                      <YAxis tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }} unit="k" />
+                      <Tooltip
+                        formatter={(val: number, name: string) => [
+                          `${val.toLocaleString('es-AR')} mil puestos`,
+                          name,
+                        ]}
+                      />
+                      <Legend wrapperStyle={{ paddingTop: '10px' }} />
                       {activeProvinces.map((provName, idx) => (
                         <Line
                           key={provName}
@@ -345,7 +435,9 @@ export default function EmpleoNacionalPage() {
                           name={provName}
                           stroke={COLOR_PALETTE[idx % COLOR_PALETTE.length]}
                           strokeWidth={provName.toLowerCase() === 'corrientes' ? 3 : 2}
-                          dot={{ r: provName.toLowerCase() === 'corrientes' ? 4 : 3 }}
+                          dot={{ r: provName.toLowerCase() === 'corrientes' ? 4 : 3, fill: COLOR_PALETTE[idx % COLOR_PALETTE.length] }}
+                          activeDot={{ r: 6 }}
+                          connectNulls={true}
                         />
                       ))}
                     </LineChart>
@@ -376,7 +468,9 @@ export default function EmpleoNacionalPage() {
                     className={styles.kpiVal}
                     style={{ color: Number(rowNacionAct?.var_interanual || 0) >= 0 ? '#16a34a' : '#dc2626' }}
                   >
-                    {`${Number(rowNacionAct?.var_interanual || 0) >= 0 ? '+' : ''}${Number(rowNacionAct?.var_interanual || 0).toFixed(1)}%`}
+                    {rowNacionAct?.var_interanual !== null && rowNacionAct?.var_interanual !== undefined
+                      ? `${Number(rowNacionAct.var_interanual) >= 0 ? '+' : ''}${Number(rowNacionAct.var_interanual).toFixed(1)}%`
+                      : '-'}
                   </div>
                   <div className={styles.kpiLabel}>Interanual</div>
                 </div>
@@ -385,7 +479,9 @@ export default function EmpleoNacionalPage() {
                     className={styles.kpiVal}
                     style={{ color: Number(rowNacionAct?.var_mensual || 0) >= 0 ? '#16a34a' : '#dc2626' }}
                   >
-                    {`${Number(rowNacionAct?.var_mensual || 0) >= 0 ? '+' : ''}${Number(rowNacionAct?.var_mensual || 0).toFixed(1)}%`}
+                    {rowNacionAct?.var_mensual !== null && rowNacionAct?.var_mensual !== undefined
+                      ? `${Number(rowNacionAct.var_mensual) >= 0 ? '+' : ''}${Number(rowNacionAct.var_mensual).toFixed(1)}%`
+                      : '-'}
                   </div>
                   <div className={styles.kpiLabel}>Mensual (s/e)</div>
                 </div>
@@ -393,15 +489,19 @@ export default function EmpleoNacionalPage() {
             </div>
           ) : (
             <>
-              {/* Tarjeta Regional */}
+              {/* Tarjeta Regional o Nacional */}
               <div className={styles.kpiCard}>
-                <div className={styles.kpiHeader}>Promedio empleo privado {selectedRegion}</div>
+                <div className={styles.kpiHeader}>
+                  {isNacionSelected ? 'Total empleo privado Nación' : `Promedio empleo privado ${selectedRegion}`}
+                </div>
                 <div className={styles.kpiMetrics}>
                   <div>
                     <div className={styles.kpiVal}>
-                      {avgPuestos > 1000 ? (avgPuestos / 1000).toFixed(1).replace('.', ',') : avgPuestos.toFixed(1)}
+                      {displayRegionalPuestos > 1000
+                        ? (displayRegionalPuestos / 1000).toFixed(2).replace('.', ',') + ' mill.'
+                        : displayRegionalPuestos.toFixed(1).replace('.', ',') + ' mil'}
                     </div>
-                    <div className={styles.kpiLabel}>mil puestos</div>
+                    <div className={styles.kpiLabel}>Puestos</div>
                   </div>
                   <div>
                     <div
@@ -430,9 +530,9 @@ export default function EmpleoNacionalPage() {
                 <div className={styles.kpiMetrics}>
                   <div>
                     <div className={styles.kpiVal}>
-                      {corrientes?.cantidad_sin_estacionalidad
-                        ? (Number(corrientes.cantidad_sin_estacionalidad) / 1000).toFixed(1).replace('.', ',')
-                        : '-'}
+                      {formatPuestosVal(
+                        Number(corrientes?.cantidad_con_estacionalidad || corrientes?.cantidad_sin_estacionalidad)
+                      )}
                     </div>
                     <div className={styles.kpiLabel}>mil puestos</div>
                   </div>
@@ -443,7 +543,7 @@ export default function EmpleoNacionalPage() {
                         color: Number(corrientes?.var_interanual || 0) >= 0 ? '#16a34a' : '#dc2626',
                       }}
                     >
-                      {corrientes?.var_interanual
+                      {corrientes?.var_interanual !== null && corrientes?.var_interanual !== undefined
                         ? `${Number(corrientes.var_interanual) >= 0 ? '+' : ''}${Number(corrientes.var_interanual).toFixed(1)}%`
                         : '-'}
                     </div>
@@ -456,7 +556,7 @@ export default function EmpleoNacionalPage() {
                         color: Number(corrientes?.var_mensual || 0) >= 0 ? '#16a34a' : '#dc2626',
                       }}
                     >
-                      {corrientes?.var_mensual
+                      {corrientes?.var_mensual !== null && corrientes?.var_mensual !== undefined
                         ? `${Number(corrientes.var_mensual) >= 0 ? '+' : ''}${Number(corrientes.var_mensual).toFixed(1)}%`
                         : '-'}
                     </div>
@@ -467,7 +567,6 @@ export default function EmpleoNacionalPage() {
             </>
           )}
 
-          {/* Botón inferior para pasar de vista */}
           <button
             onClick={() => {
               if (activeTab === 'nacion') setActiveTab('tipo-registro');

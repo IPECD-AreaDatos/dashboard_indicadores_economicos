@@ -15,33 +15,67 @@ export async function GET(request: NextRequest) {
     const client = await pool.connect();
     await client.query('SET search_path TO public;');
 
-    // 1. Serie Anual TOTAL PBG (Filtra por la fila consolidada 'PBG')
+    // 1. Serie Anual TOTAL PBG combinando pbg_valor_anual y pbg_anual_desglosado
     const queryAnual = `
+      WITH combined_anual AS (
+        SELECT 
+          "Año"::int as anio,
+          "Valor"::numeric as valor
+        FROM pbg_valor_anual
+        WHERE UPPER(TRIM(COALESCE("Actividad", ''))) = 'PBG' 
+           OR UPPER(TRIM(COALESCE("Variable", ''))) = 'PBG'
+        
+        UNION
+        
+        SELECT 
+          "año"::int as anio,
+          valor::numeric as valor
+        FROM pbg_anual_desglosado
+        WHERE UPPER(TRIM(COALESCE(letra, ''))) = 'PBG'
+      ),
+      dedup_anual AS (
+        SELECT 
+          anio, 
+          MAX(valor) as valor
+        FROM combined_anual
+        GROUP BY anio
+      )
       SELECT 
-        "Año" as anio,
-        "Variable" as variable,
-        "Actividad" as actividad,
-        "Valor" as valor,
-        ROUND((CASE WHEN ABS(COALESCE("Variacion", 0)) < 1 AND COALESCE("Variacion", 0) != 0 THEN "Variacion" * 100 ELSE "Variacion" END)::numeric, 1) as variacion
-      FROM pbg_valor_anual
-      WHERE UPPER(TRIM(COALESCE("Actividad", ''))) = 'PBG' 
-         OR UPPER(TRIM(COALESCE("Variable", ''))) = 'PBG'
-      ORDER BY "Año" ASC;
+        anio,
+        valor,
+        ROUND(
+          (
+            ((valor - LAG(valor, 1) OVER (ORDER BY anio)) 
+            / NULLIF(LAG(valor, 1) OVER (ORDER BY anio), 0)) * 100
+          )::numeric, 1
+        ) as variacion
+      FROM dedup_anual
+      ORDER BY anio ASC;
     `;
 
     // 2. Serie Trimestral TOTAL PBG
     const queryTrimestral = `
+      WITH trim_raw AS (
+        SELECT 
+          "Año"::int as anio,
+          "Trimestre"::text as trimestre,
+          "Valor"::numeric as valor
+        FROM pbg_valor_trimestral
+        WHERE UPPER(TRIM(COALESCE("Actividad", ''))) = 'PBG' 
+           OR UPPER(TRIM(COALESCE("Variable", ''))) = 'PBG'
+        ORDER BY "Año" ASC, "Trimestre" ASC
+      )
       SELECT 
-        "Año" as anio,
-        "Trimestre" as trimestre,
-        "Variable" as variable,
-        "Actividad" as actividad,
-        "Valor" as valor,
-        ROUND((CASE WHEN ABS(COALESCE("Variacion", 0)) < 1 AND COALESCE("Variacion", 0) != 0 THEN "Variacion" * 100 ELSE "Variacion" END)::numeric, 1) as variacion
-      FROM pbg_valor_trimestral
-      WHERE UPPER(TRIM(COALESCE("Actividad", ''))) = 'PBG' 
-         OR UPPER(TRIM(COALESCE("Variable", ''))) = 'PBG'
-      ORDER BY "Año" ASC, "Trimestre" ASC;
+        anio,
+        trimestre,
+        valor,
+        ROUND(
+          (
+            ((valor - LAG(valor, 1) OVER (ORDER BY anio, trimestre)) 
+            / NULLIF(LAG(valor, 1) OVER (ORDER BY anio, trimestre), 0)) * 100
+          )::numeric, 1
+        ) as variacion
+      FROM trim_raw;
     `;
 
     // 3. Desglose Sectorial por Actividad
