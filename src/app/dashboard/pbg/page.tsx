@@ -204,7 +204,7 @@ export default function PbgPage() {
           )}
 
           <p className={styles.footerNote}>
-            Fuente: IPECD — Valor Agregado Bruto a Precios Constantes del 2004.
+            Fuente: IMI — Valor Agregado Bruto a Precios Constantes del 2004.
           </p>
         </div>
 

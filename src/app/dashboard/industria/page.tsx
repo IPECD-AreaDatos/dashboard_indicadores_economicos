@@ -253,7 +253,7 @@ export default function IndustriaPage() {
           )}
 
           <p className={styles.footerNote}>
-            Fuente: IPECD en base a INDEC y relevamientos sectoriales.
+            Fuente: IMI en base a INDEC y relevamientos sectoriales.
           </p>
         </div>
 

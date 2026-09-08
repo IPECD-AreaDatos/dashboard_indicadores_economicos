@@ -371,7 +371,7 @@ export default function ConstruccionPage() {
           )}
 
           <p className={styles.footerNote}>
-            Fuente: IPECD en base a Instituto de Estadística y Registro de la Industria de la Construcción (IERIC).
+            Fuente: IMI en base a Instituto de Estadística y Registro de la Industria de la Construcción (IERIC).
           </p>
         </div>
 
