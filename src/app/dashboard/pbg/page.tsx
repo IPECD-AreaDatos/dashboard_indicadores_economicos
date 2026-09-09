@@ -238,7 +238,13 @@ export default function PbgPage() {
       {/* Sección Desglose por Actividades Económicas */}
       <div className={styles.desgloseSection}>
         <div className={styles.desgloseHeader}>
-          <h2 className={styles.desgloseTitle}>Estructura y Desglose por Actividad Económica</h2>
+          <div>
+            <h2 className={styles.desgloseTitle}>Estructura y Desglose por Actividad Económica</h2>
+            <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '4px', fontWeight: 500 }}>
+              Cifras expresadas en miles de pesos a precios constantes de 2004
+            </p>
+          </div>
+
           <select
             style={{
               padding: '6px 12px',
@@ -264,7 +270,7 @@ export default function PbgPage() {
               <tr>
                 <th>Código</th>
                 <th>Descripción del Sector</th>
-                <th>Valor ($)</th>
+                <th>Valor (miles de $ a precios de 2004)</th>
                 <th>Variación Interanual</th>
               </tr>
             </thead>

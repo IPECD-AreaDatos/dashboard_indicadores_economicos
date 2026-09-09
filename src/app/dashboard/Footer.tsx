@@ -6,11 +6,12 @@ export default function Footer() {
       <div className="footer-content">
         <div className="footer-logos">
           <img 
-            src={withBasePath("/images/logo_color.png")} 
-            alt="Instituto de Modernización e Innovación — Corrientes"
-            width={240}
+            src={withBasePath("/images/LOGO-Negro (IMI+Gob+Gerencia)_1.png")} 
+            alt="Instituto de Modernización e Innovación — Gerencia de Inteligencia Artificial y Ciencia de Datos"
+            width={340}
             height={55}
             className="footer-logo-img"
+            style={{ objectFit: 'contain' }}
           />
         </div>
         

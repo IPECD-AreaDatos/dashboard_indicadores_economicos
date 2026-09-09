@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
       ORDER BY fecha ASC;
     `;
 
-    // 5. RIPTE & SMVM
+    // 5. RIPTE
     const qRipte = `
       SELECT 
         TO_CHAR(fecha, 'YYYY-MM-DD') as fecha,
@@ -129,6 +129,7 @@ export async function GET(request: NextRequest) {
       ORDER BY fecha ASC;
     `;
 
+    // 6. SMVM
     const qSmvm = `
       SELECT 
         TO_CHAR(fecha, 'YYYY-MM-DD') as fecha,
@@ -136,6 +137,36 @@ export async function GET(request: NextRequest) {
         ROUND((((salario_mvm_mensual - LAG(salario_mvm_mensual, 1) OVER (ORDER BY fecha)) / NULLIF(LAG(salario_mvm_mensual, 1) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as var_mensual,
         ROUND((((salario_mvm_mensual - LAG(salario_mvm_mensual, 12) OVER (ORDER BY fecha)) / NULLIF(LAG(salario_mvm_mensual, 12) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as var_interanual
       FROM salario_mvm
+      ORDER BY fecha ASC;
+    `;
+
+    // 7. Índice de Salarios (INDEC)
+    const qIndiceSalario = `
+      WITH is_clean AS (
+        SELECT 
+          fecha,
+          COALESCE(is_indice_total, is_total_registrado, is_sector_privado_registrado) as valor
+        FROM indice_salario
+        WHERE COALESCE(is_indice_total, is_total_registrado, is_sector_privado_registrado) IS NOT NULL
+      )
+      SELECT 
+        TO_CHAR(fecha, 'YYYY-MM-DD') as fecha,
+        ROUND(valor::numeric, 1) as valor,
+        ROUND((((valor - LAG(valor, 1) OVER (ORDER BY fecha)) / NULLIF(LAG(valor, 1) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as var_mensual,
+        ROUND((((valor - LAG(valor, 12) OVER (ORDER BY fecha)) / NULLIF(LAG(valor, 12) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as var_interanual
+      FROM is_clean
+      ORDER BY fecha ASC;
+    `;
+
+    // 8. IERIC Salario Construcción (Corrientes: id_provincia = 18)
+    const qIericSalario = `
+      SELECT 
+        TO_CHAR(fecha, 'YYYY-MM-DD') as fecha,
+        ROUND(salario_promedio::numeric, 0) as valor,
+        ROUND((((salario_promedio - LAG(salario_promedio, 1) OVER (ORDER BY fecha)) / NULLIF(LAG(salario_promedio, 1) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as var_mensual,
+        ROUND((((salario_promedio - LAG(salario_promedio, 12) OVER (ORDER BY fecha)) / NULLIF(LAG(salario_promedio, 12) OVER (ORDER BY fecha), 0)) * 100)::numeric, 1) as var_interanual
+      FROM ieric_salario
+      WHERE id_provincia = 18
       ORDER BY fecha ASC;
     `;
 
@@ -196,13 +227,15 @@ export async function GET(request: NextRequest) {
       ORDER BY fecha ASC;
     `;
 
-    const [rIpc, rCbtCba, rSipa, rSrt, rRipte, rSmvm, rIpi, rIpicorr, rIeric] = await Promise.all([
+    const [rIpc, rCbtCba, rSipa, rSrt, rRipte, rSmvm, rIndiceSal, rIericSal, rIpi, rIpicorr, rIeric] = await Promise.all([
       client.query(qIpc),
       client.query(qCbtCba),
       client.query(qSipa),
       client.query(qSrt),
       client.query(qRipte),
       client.query(qSmvm),
+      client.query(qIndiceSalario),
+      client.query(qIericSalario),
       client.query(qIpi),
       client.query(qIpicorr),
       client.query(qIeric),
@@ -217,6 +250,8 @@ export async function GET(request: NextRequest) {
       srt: rSrt.rows,
       ripte: rRipte.rows,
       smvm: rSmvm.rows,
+      indice_salario: rIndiceSal.rows,
+      ieric_salario: rIericSal.rows,
       ipi: rIpi.rows,
       ipicorr: rIpicorr.rows,
       ieric: rIeric.rows,
