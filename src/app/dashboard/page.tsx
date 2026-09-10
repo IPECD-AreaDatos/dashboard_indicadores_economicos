@@ -165,7 +165,6 @@ export default function ResumenPrincipalPage() {
                 <Tag size={16} />
                 <span>Precios y Canastas Básicas</span>
               </div>
-              <span className={styles.cardDate}>{formatMonthLabel(lastIpcNac?.fecha)}</span>
             </div>
 
             <div className={styles.cardBody}>
@@ -190,9 +189,12 @@ export default function ResumenPrincipalPage() {
                   </div>
                   <div className={styles.metricLabel}>Mensual</div>
                 </div>
-                <Link href="/dashboard/ipc" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
+                <div className={styles.actionGroup}>
+                  <span className={styles.dateBadge}>{formatMonthLabel(lastIpcNac?.fecha)}</span>
+                  <Link href="/dashboard/ipc" className={styles.arrowLink}>
+                    <ArrowUpRight size={18} />
+                  </Link>
+                </div>
               </div>
 
               {/* 2. IPC NEA */}
@@ -216,9 +218,12 @@ export default function ResumenPrincipalPage() {
                   </div>
                   <div className={styles.metricLabel}>Mensual</div>
                 </div>
-                <Link href="/dashboard/ipc" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
+                <div className={styles.actionGroup}>
+                  <span className={styles.dateBadge}>{formatMonthLabel(lastIpcNea?.fecha)}</span>
+                  <Link href="/dashboard/ipc" className={styles.arrowLink}>
+                    <ArrowUpRight size={18} />
+                  </Link>
+                </div>
               </div>
 
               {/* 3. CBA NEA */}
@@ -246,9 +251,12 @@ export default function ResumenPrincipalPage() {
                   </div>
                   <div className={styles.metricLabel}>CBA m.m.</div>
                 </div>
-                <Link href="/dashboard/indicadores_pais" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
+                <div className={styles.actionGroup}>
+                  <span className={styles.dateBadge}>{formatMonthLabel(lastCbtCba?.fecha)}</span>
+                  <Link href="/dashboard/indicadores_pais" className={styles.arrowLink}>
+                    <ArrowUpRight size={18} />
+                  </Link>
+                </div>
               </div>
 
               {/* 4. CBT NEA */}
@@ -276,9 +284,12 @@ export default function ResumenPrincipalPage() {
                   </div>
                   <div className={styles.metricLabel}>CBT m.m.</div>
                 </div>
-                <Link href="/dashboard/indicadores_pais" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
+                <div className={styles.actionGroup}>
+                  <span className={styles.dateBadge}>{formatMonthLabel(lastCbtCba?.fecha)}</span>
+                  <Link href="/dashboard/indicadores_pais" className={styles.arrowLink}>
+                    <ArrowUpRight size={18} />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -292,7 +303,6 @@ export default function ResumenPrincipalPage() {
                 <Users size={16} />
                 <span>Empleo Privado y Registrado</span>
               </div>
-              <span className={styles.cardDate}>{formatMonthLabel(lastSipaNac?.fecha)}</span>
             </div>
 
             <div className={styles.cardBody}>
@@ -317,9 +327,12 @@ export default function ResumenPrincipalPage() {
                   </div>
                   <div className={styles.metricLabel}>Mensual (s/e)</div>
                 </div>
-                <Link href="/dashboard/empleo_nacional" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
+                <div className={styles.actionGroup}>
+                  <span className={styles.dateBadge}>{formatMonthLabel(lastSipaNac?.fecha)}</span>
+                  <Link href="/dashboard/empleo_nacional" className={styles.arrowLink}>
+                    <ArrowUpRight size={18} />
+                  </Link>
+                </div>
               </div>
 
               {/* 2. SIPA Corrientes */}
@@ -343,9 +356,12 @@ export default function ResumenPrincipalPage() {
                   </div>
                   <div className={styles.metricLabel}>Mensual (s/e)</div>
                 </div>
-                <Link href="/dashboard/empleo_nacional" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
+                <div className={styles.actionGroup}>
+                  <span className={styles.dateBadge}>{formatMonthLabel(lastSipaCtes?.fecha)}</span>
+                  <Link href="/dashboard/empleo_nacional" className={styles.arrowLink}>
+                    <ArrowUpRight size={18} />
+                  </Link>
+                </div>
               </div>
 
               {/* 3. SRT Nación */}
@@ -367,9 +383,12 @@ export default function ResumenPrincipalPage() {
                   <div className={styles.metricVal}>Nacional</div>
                   <div className={styles.metricLabel}>Cobertura</div>
                 </div>
-                <Link href="/dashboard/empleo_provincial" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
+                <div className={styles.actionGroup}>
+                  <span className={styles.dateBadge}>{formatMonthLabel(lastSrtNac?.fecha)}</span>
+                  <Link href="/dashboard/empleo_provincial" className={styles.arrowLink}>
+                    <ArrowUpRight size={18} />
+                  </Link>
+                </div>
               </div>
 
               {/* 4. SRT Corrientes */}
@@ -391,9 +410,12 @@ export default function ResumenPrincipalPage() {
                   <div className={styles.metricVal}>Corrientes</div>
                   <div className={styles.metricLabel}>Cobertura</div>
                 </div>
-                <Link href="/dashboard/empleo_provincial" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
+                <div className={styles.actionGroup}>
+                  <span className={styles.dateBadge}>{formatMonthLabel(lastSrtCtes?.fecha)}</span>
+                  <Link href="/dashboard/empleo_provincial" className={styles.arrowLink}>
+                    <ArrowUpRight size={18} />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -407,7 +429,6 @@ export default function ResumenPrincipalPage() {
                 <DollarSign size={16} />
                 <span>Salarios e Ingresos</span>
               </div>
-              <span className={styles.cardDate}>{formatMonthLabel(lastRipte?.fecha)}</span>
             </div>
 
             <div className={styles.cardBody}>
@@ -432,9 +453,12 @@ export default function ResumenPrincipalPage() {
                   </div>
                   <div className={styles.metricLabel}>Mensual</div>
                 </div>
-                <Link href="/dashboard/indicadores_pais" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
+                <div className={styles.actionGroup}>
+                  <span className={styles.dateBadge}>{formatMonthLabel(lastRipte?.fecha)}</span>
+                  <Link href="/dashboard/indicadores_pais" className={styles.arrowLink}>
+                    <ArrowUpRight size={18} />
+                  </Link>
+                </div>
               </div>
 
               {/* 2. Salario Mínimo Vital y Móvil */}
@@ -458,9 +482,12 @@ export default function ResumenPrincipalPage() {
                   </div>
                   <div className={styles.metricLabel}>Mensual</div>
                 </div>
-                <Link href="/dashboard/indicadores_pais" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
+                <div className={styles.actionGroup}>
+                  <span className={styles.dateBadge}>{formatMonthLabel(lastSmvm?.fecha)}</span>
+                  <Link href="/dashboard/indicadores_pais" className={styles.arrowLink}>
+                    <ArrowUpRight size={18} />
+                  </Link>
+                </div>
               </div>
 
               {/* 3. Índice de Salarios INDEC */}
@@ -484,9 +511,12 @@ export default function ResumenPrincipalPage() {
                   </div>
                   <div className={styles.metricLabel}>Mensual</div>
                 </div>
-                <Link href="/dashboard/indicadores_pais" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
+                <div className={styles.actionGroup}>
+                  <span className={styles.dateBadge}>{formatMonthLabel(lastIndiceSal?.fecha)}</span>
+                  <Link href="/dashboard/indicadores_pais" className={styles.arrowLink}>
+                    <ArrowUpRight size={18} />
+                  </Link>
+                </div>
               </div>
 
               {/* 4. Salario Promedio Construcción (Corrientes) */}
@@ -510,9 +540,12 @@ export default function ResumenPrincipalPage() {
                   </div>
                   <div className={styles.metricLabel}>Mensual</div>
                 </div>
-                <Link href="/dashboard/construccion" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
+                <div className={styles.actionGroup}>
+                  <span className={styles.dateBadge}>{formatMonthLabel(lastIericSal?.fecha)}</span>
+                  <Link href="/dashboard/construccion" className={styles.arrowLink}>
+                    <ArrowUpRight size={18} />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -526,7 +559,6 @@ export default function ResumenPrincipalPage() {
                 <Factory size={16} />
                 <span>Industria y Construcción</span>
               </div>
-              <span className={styles.cardDate}>{formatMonthLabel(lastIpi?.fecha)}</span>
             </div>
 
             <div className={styles.cardBody}>
@@ -549,9 +581,12 @@ export default function ResumenPrincipalPage() {
                   </div>
                   <div className={styles.metricLabel}>Mensual</div>
                 </div>
-                <Link href="/dashboard/industria" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
+                <div className={styles.actionGroup}>
+                  <span className={styles.dateBadge}>{formatMonthLabel(lastIpi?.fecha)}</span>
+                  <Link href="/dashboard/industria" className={styles.arrowLink}>
+                    <ArrowUpRight size={18} />
+                  </Link>
+                </div>
               </div>
 
               {/* 2. IPICorr (Corrientes) */}
@@ -573,9 +608,12 @@ export default function ResumenPrincipalPage() {
                   </div>
                   <div className={styles.metricLabel}>Mensual</div>
                 </div>
-                <Link href="/dashboard/industria" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
+                <div className={styles.actionGroup}>
+                  <span className={styles.dateBadge}>{formatMonthLabel(lastIpicorr?.fecha)}</span>
+                  <Link href="/dashboard/industria" className={styles.arrowLink}>
+                    <ArrowUpRight size={18} />
+                  </Link>
+                </div>
               </div>
 
               {/* 3. IERIC Construcción NEA */}
@@ -599,9 +637,12 @@ export default function ResumenPrincipalPage() {
                   </div>
                   <div className={styles.metricLabel}>Empresas Activas</div>
                 </div>
-                <Link href="/dashboard/construccion" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
+                <div className={styles.actionGroup}>
+                  <span className={styles.dateBadge}>{formatMonthLabel(lastIericNea?.fecha)}</span>
+                  <Link href="/dashboard/construccion" className={styles.arrowLink}>
+                    <ArrowUpRight size={18} />
+                  </Link>
+                </div>
               </div>
 
               {/* 4. IERIC Construcción Corrientes */}
@@ -625,9 +666,12 @@ export default function ResumenPrincipalPage() {
                   </div>
                   <div className={styles.metricLabel}>Empresas Activas</div>
                 </div>
-                <Link href="/dashboard/construccion" className={styles.arrowLink}>
-                  <ArrowUpRight size={18} />
-                </Link>
+                <div className={styles.actionGroup}>
+                  <span className={styles.dateBadge}>{formatMonthLabel(lastIericCtes?.fecha)}</span>
+                  <Link href="/dashboard/construccion" className={styles.arrowLink}>
+                    <ArrowUpRight size={18} />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

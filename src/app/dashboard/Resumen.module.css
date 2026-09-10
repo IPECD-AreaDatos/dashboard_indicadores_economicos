@@ -1,10 +1,10 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   max-width: 1600px;
   margin: 0 auto;
-  padding: 0 4px 20px 4px;
+  padding: 0 4px 16px 4px;
   box-sizing: border-box;
 }
 
@@ -16,88 +16,124 @@
 
 .titleGroup h1 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.02em;
 }
 
-/* GRID 2X2 CON CARDS MÁS ALTAS Y EQUILIBRADAS */
+/* GRID 2X2 EQUILIBRADA Y COMPACTA */
 .gridCards {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 22px;
+  gap: 28px;
   padding-top: 20px;
   align-items: stretch;
 }
 
 .card {
   background: #ffffff;
-  border-radius: 18px;
+  border-radius: 14px;
   border: 1px solid #cbd5e1;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
   overflow: visible;
   display: flex;
   flex-direction: column;
-  min-height: 330px; /* Le da el alto suficiente para que respire */
 }
 
 .cardHeader {
   background-color: #14203b;
   color: #ffffff;
-  padding: 10px 18px;
+  padding: 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top-left-radius: 17px;
-  border-top-right-radius: 17px;
+  border-top-left-radius: 13px;
+  border-top-right-radius: 13px;
 }
 
 .cardTitle {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.92rem;
-  font-weight: 800;
+  font-size: 0.88rem;
+  font-weight: 700;
 }
 
-.cardDate {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #94a3b8;
-  font-style: italic;
-}
-
-/* CUERPO HOLGADO Y DISTRIBUIDO */
+/* CUERPO COMPACTO */
 .cardBody {
   display: flex;
   flex-direction: column;
-  padding: 15px 20px;
+  padding: 14px 18px;
 }
+
+/* FILA DE INDICADOR EN UNA SOLA LÍNEA */
 .indicatorRow {
   display: grid;
-  grid-template-columns: 40px minmax(130px, 1.3fr) repeat(2, 1fr) 32px;
+  grid-template-columns: 34px minmax(130px, 1.3fr) 1fr 1fr 85px;
   align-items: center;
   gap: 14px;
-  padding: 12px 10px;
-  border-radius: 8px;
+  padding: 14px 8px;
   border-bottom: 1px solid #f1f5f9;
-  transition: all 0.15s ease-in-out;
+  transition: background-color 0.15s ease;
 }
 
 .indicatorRow:last-child {
   border-bottom: none;
 }
 
-.indicatorRow:hover .arrowLink {
-  color: #1e293b;
-  background-color: #e2e8f0;
+.indicatorRow:hover {
+  background-color: #f8fafc;
+  border-radius: 6px;
 }
+
+/* GRUPO DERECHA: FECHA Y FLECHA EN LÍNEA */
+.actionGroup {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.dateBadge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #64748b;
+  background-color: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+.indicatorRow:hover .dateBadge {
+  background-color: #e2e8f0;
+  color: #1e293b;
+}
+
+.arrowLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  color: #94a3b8;
+  transition: all 0.15s ease;
+}
+
+.arrowLink:hover {
+  color: #16a34a;
+  transform: translateX(1px);
+}
+
 /* MAPAS CIRCULARES */
 .mapIconCircle {
   position: relative;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -112,15 +148,15 @@
 }
 
 .mapImgWrapper {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
   background-color: #f8fafc;
 }
 
@@ -140,12 +176,12 @@
   left: 0;
   background-color: #0f172a;
   color: #ffffff;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
   white-space: nowrap;
-  padding: 5px 10px;
+  padding: 4px 8px;
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   transition: opacity 0.15s ease, transform 0.15s ease;
   transform: translateY(3px);
   pointer-events: none;
@@ -156,7 +192,7 @@
   content: '';
   position: absolute;
   top: 100%;
-  left: 14px;
+  left: 12px;
   border-width: 4px;
   border-style: solid;
   border-color: #0f172a transparent transparent transparent;
@@ -167,6 +203,8 @@
   opacity: 1;
   transform: translateY(0);
 }
+
+/* MÉTRICAS */
 .metricCol {
   display: flex;
   flex-direction: column;
@@ -174,42 +212,22 @@
 }
 
 .metricVal {
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: #0f172a;
-  font-variant-numeric: tabular-nums; /* Mantiene alineados los dígitos */
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
-  line-height: 1.25;
+  line-height: 1.2;
 }
 
 .metricLabel {
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 600;
   color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  margin-top: 3px;
+  letter-spacing: 0.02em;
+  margin-top: 1px;
   white-space: nowrap;
-}
-
-.sparklineContainer {
-  width: 95px;
-  height: 26px;
-}
-.arrowLink {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  color: #94a3b8;
-  transition: all 0.15s ease;
-}
-
-.arrowLink:hover {
-  transform: translateX(2px);
-  color: #16a34a;
 }
 
 @media (max-width: 1024px) {
