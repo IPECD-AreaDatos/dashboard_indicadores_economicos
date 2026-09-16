@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
 
+// Forzar ejecución dinámica y anular caché de Next.js
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const pool = new Pool({
   host: process.env.HOST_DBB2,
   port: Number(process.env.PORT_DBB2) || 5432,
@@ -106,18 +110,32 @@ export async function GET(request: NextRequest) {
     const resData = await client.query(qData, [fechaTarget]);
     client.release();
 
-    return NextResponse.json({
-      datos: resData.rows,
-      sectores: resSectores.rows.map((r) => r.sector),
-      regiones: resRegiones.rows,
-      fechasDisponibles,
-      fechaActiva: fechaTarget,
-    });
+    return NextResponse.json(
+      {
+        datos: resData.rows,
+        sectores: resSectores.rows.map((r) => r.sector),
+        regiones: resRegiones.rows,
+        fechasDisponibles,
+        fechaActiva: fechaTarget,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('Error fetching SRT data:', error);
     return NextResponse.json(
       { error: 'Error al consultar SRT', details: error.message },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store',
+        },
+      }
     );
   }
 }

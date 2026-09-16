@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
 
+// Forzar ejecución dinámica y anular caché de Next.js
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const pool = new Pool({
   host: process.env.HOST_DBB2,
   port: Number(process.env.PORT_DBB2) || 5432,
@@ -170,7 +174,7 @@ export async function GET(request: NextRequest) {
       ORDER BY fecha ASC;
     `;
 
-    // 6. IPI Nación
+    // 9. IPI Nación
     const qIpi = `
       SELECT 
         TO_CHAR(fecha, 'YYYY-MM-DD') as fecha,
@@ -181,7 +185,7 @@ export async function GET(request: NextRequest) {
       ORDER BY fecha ASC;
     `;
 
-    // 7. IPICorr (Corrientes)
+    // 10. IPICorr (Corrientes)
     const qIpicorr = `
       SELECT 
         TO_CHAR(fecha, 'YYYY-MM-DD') as fecha,
@@ -191,7 +195,7 @@ export async function GET(request: NextRequest) {
       ORDER BY fecha ASC;
     `;
 
-    // 8. IERIC (NEA y Corrientes con puestos y empresas)
+    // 11. IERIC (NEA y Corrientes con puestos y empresas)
     const qIeric = `
       WITH ieric_ctes AS (
         SELECT 
@@ -243,24 +247,38 @@ export async function GET(request: NextRequest) {
 
     client.release();
 
-    return NextResponse.json({
-      ipc: rIpc.rows,
-      cbt_cba: rCbtCba.rows,
-      sipa: rSipa.rows,
-      srt: rSrt.rows,
-      ripte: rRipte.rows,
-      smvm: rSmvm.rows,
-      indice_salario: rIndiceSal.rows,
-      ieric_salario: rIericSal.rows,
-      ipi: rIpi.rows,
-      ipicorr: rIpicorr.rows,
-      ieric: rIeric.rows,
-    });
+    return NextResponse.json(
+      {
+        ipc: rIpc.rows,
+        cbt_cba: rCbtCba.rows,
+        sipa: rSipa.rows,
+        srt: rSrt.rows,
+        ripte: rRipte.rows,
+        smvm: rSmvm.rows,
+        indice_salario: rIndiceSal.rows,
+        ieric_salario: rIericSal.rows,
+        ipi: rIpi.rows,
+        ipicorr: rIpicorr.rows,
+        ieric: rIeric.rows,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('Error en /api/resumen:', error);
     return NextResponse.json(
       { error: 'Error al consultar datos de resumen', details: error.message },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store',
+        },
+      }
     );
   }
 }

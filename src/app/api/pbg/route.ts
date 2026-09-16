@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
 
+// Forzar ejecución dinámica y anular caché de Next.js
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const pool = new Pool({
   host: process.env.HOST_DBB2,
   port: Number(process.env.PORT_DBB2) || 5432,
@@ -98,16 +102,30 @@ export async function GET(request: NextRequest) {
 
     client.release();
 
-    return NextResponse.json({
-      anual: resAnual.rows,
-      trimestral: resTrimestral.rows,
-      desglosado: resDesglosado.rows,
-    });
+    return NextResponse.json(
+      {
+        anual: resAnual.rows,
+        trimestral: resTrimestral.rows,
+        desglosado: resDesglosado.rows,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('Error fetching PBG data:', error);
     return NextResponse.json(
       { error: 'Error al consultar las tablas de PBG en datalake_economico', details: error.message },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store',
+        },
+      }
     );
   }
 }

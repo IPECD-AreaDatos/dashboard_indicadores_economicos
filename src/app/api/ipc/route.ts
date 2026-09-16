@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
 
+// Forzar ejecución dinámica y anular caché de Next.js
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const pool = new Pool({
   host: process.env.HOST_DBB2,
   port: Number(process.env.PORT_DBB2) || 5432,
@@ -81,17 +85,31 @@ export async function GET(request: NextRequest) {
 
     client.release();
 
-    return NextResponse.json({
-      serieGeneral: resSerie.rows,
-      items: resItems.rows,
-      regiones: resRegiones.rows,
-      fechasDisponibles: resFechas.rows.map((r) => r.fecha),
-    });
+    return NextResponse.json(
+      {
+        serieGeneral: resSerie.rows,
+        items: resItems.rows,
+        regiones: resRegiones.rows,
+        fechasDisponibles: resFechas.rows.map((r) => r.fecha),
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('Error en /api/ipc:', error);
     return NextResponse.json(
       { error: 'Error al consultar IPC', details: error.message },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store',
+        },
+      }
     );
   }
 }
