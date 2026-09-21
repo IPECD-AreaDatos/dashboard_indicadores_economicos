@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       ORDER BY fecha ASC;
     `;
 
-    // 2. IPI Nación (Calcula o multiplica x100 las variaciones reales)
+    // 2. IPI Nación
     const qIpi = `
       SELECT 
         TO_CHAR(fecha, 'YYYY-MM-DD') as fecha,
@@ -82,12 +82,12 @@ export async function GET(request: NextRequest) {
       ORDER BY fecha ASC;
     `;
 
-    // 3. EMAE Variaciones
+    // 3. EMAE Variaciones (lectura directa sin multiplicar x100)
     const qEmae = `
       SELECT 
         TO_CHAR(fecha, 'YYYY-MM-DD') as fecha,
-        ROUND((CASE WHEN ABS(COALESCE(variacion_mensual, 0)) < 1 AND COALESCE(variacion_mensual, 0) != 0 THEN variacion_mensual * 100 ELSE variacion_mensual END)::numeric, 1) as emae_men,
-        ROUND((CASE WHEN ABS(COALESCE(variacion_interanual, 0)) < 1 AND COALESCE(variacion_interanual, 0) != 0 THEN variacion_interanual * 100 ELSE variacion_interanual END)::numeric, 1) as emae_ia
+        ROUND(COALESCE(variacion_mensual, 0)::numeric, 1) as emae_men,
+        ROUND(COALESCE(variacion_interanual, 0)::numeric, 1) as emae_ia
       FROM emae_variaciones
       ORDER BY fecha ASC;
     `;
