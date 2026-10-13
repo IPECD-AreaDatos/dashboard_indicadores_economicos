@@ -10,6 +10,7 @@ import {
   CartesianGrid,
   Tooltip,
   Cell,
+  LabelList,
   ResponsiveContainer,
 } from 'recharts';
 import styles from './Srt.module.css';
@@ -206,7 +207,7 @@ export default function EmpleoProvincialPage() {
                 <BarChart
                   data={chartData}
                   layout="vertical"
-                  margin={{ top: 10, right: 30, left: 100, bottom: 10 }}
+                  margin={{ top: 10, right: 105, left: 100, bottom: 10 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
                   <XAxis
@@ -225,7 +226,7 @@ export default function EmpleoProvincialPage() {
                     width={95}
                   />
                   <Tooltip
-                    cursor={false} /* ELIMINA EL FONDO GRIS AL PASAR EL MOUSE */
+                    cursor={false}
                     formatter={(val: number) =>
                       metric === 'trabajadores'
                         ? [`${val.toLocaleString('es-AR')} trabajadores`, 'Total']
@@ -239,6 +240,21 @@ export default function EmpleoProvincialPage() {
                         fill={entry.provincia.toLowerCase().includes('corrientes') ? '#84cc16' : '#1e293b'}
                       />
                     ))}
+                    <LabelList
+                      dataKey={metric}
+                      position="right"
+                      formatter={(val: any) => {
+                        const num = Number(val) || 0;
+                        return metric === 'trabajadores'
+                          ? num.toLocaleString('es-AR')
+                          : `$${num.toLocaleString('es-AR')}`;
+                      }}
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        fill: '#475569',
+                      }}
+                    />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>

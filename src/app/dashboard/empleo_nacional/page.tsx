@@ -137,7 +137,6 @@ export default function EmpleoNacionalPage() {
       const provName = isRowNacion ? 'Nación' : row.nombre_provincia || `Prov_${row.id_provincia}`;
       provSet.add(provName);
 
-      // Los datos vienen en miles (ej: 75.6 o 6106.5)
       const rawVal = Number(row.cantidad_con_estacionalidad || row.cantidad_sin_estacionalidad) || 0;
       grouped[row.fecha][provName] = +rawVal.toFixed(1);
     });
@@ -161,7 +160,7 @@ export default function EmpleoNacionalPage() {
     setActiveProvinces(Array.from(provSet));
   }, [rawProvincias, selectedPeriod, selectedRegion]);
 
-  // 2. Serie Nacional (Total Registrado)
+  // 2. Serie Nacional (Convertida de miles a millones para escala limpia)
   useEffect(() => {
     if (!rawNacion || rawNacion.length === 0) return;
 
@@ -172,12 +171,15 @@ export default function EmpleoNacionalPage() {
       const monthsEs = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
       const monthLabel = monthsEs[monthNum - 1] || 'mes';
 
-      const totalVal = Number(row.total_puestos) || 0;
+      const rawVal = Number(row.total_puestos) || 0;
+      // Convertir miles a millones (ej: 12760.5 -> 12.76)
+      const millonesVal = +(rawVal / 1000).toFixed(2);
 
       return {
         originalFecha: row.fecha,
         fechaLabel: `${monthLabel}-${yearShort}`,
-        Total: +totalVal.toFixed(1),
+        TotalMillones: millonesVal,
+        totalPuestosExacto: Math.round(rawVal * 1000),
         var_mensual: Number(row.var_mensual) || 0,
         var_interanual: Number(row.var_interanual) || 0,
       };
@@ -266,7 +268,6 @@ export default function EmpleoNacionalPage() {
     ? rowsFechaProv.reduce((acc, curr) => acc + (Number(curr.var_mensual) || 0), 0) / rowsFechaProv.length
     : 0;
 
-  // Total Nación en Millones (dividido por 1000 porque viene en miles)
   const rowNacionAct = rawNacion.find((r) => r.fecha === selectedFecha);
   const totalNacionMillones = rowNacionAct
     ? (Number(rowNacionAct.total_puestos) / 1000).toFixed(2).replace('.', ',')
@@ -341,9 +342,9 @@ export default function EmpleoNacionalPage() {
         <div className={styles.chartCard}>
           <div className={styles.chartHeader}>
             <div className={styles.badgeCategory}>
-              {activeTab === 'nacion' && 'Evolución mensual empleo registrado nacional (en miles)'}
+              {activeTab === 'nacion' && 'Evolución mensual empleo registrado nacional (en millones)'}
               {activeTab === 'tipo-registro' && 'Análisis por tipo de registro (en miles)'}
-              {activeTab === 'provincias' && `Empleo privado por provincia (${selectedRegion})`}
+              {activeTab === 'provincias' && `Empleo privado por provincia (en miles — ${selectedRegion})`}
             </div>
 
             {activeTab !== 'tipo-registro' && (
@@ -387,15 +388,32 @@ export default function EmpleoNacionalPage() {
           ) : (
             <div className={styles.chartScrollArea}>
               <div className={styles.chartCanvas} style={{ height: '520px' }}>
-                {/* 1. GRÁFICO NACIONAL */}
+                {/* 1. GRÁFICO NACIONAL (UNIFICADO EN MILLONES) */}
                 {activeTab === 'nacion' && (
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartDataNacion} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                    <LineChart data={chartDataNacion} margin={{ top: 20, right: 30, left: 15, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                       <XAxis dataKey="fechaLabel" tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }} />
-                      <YAxis tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }} unit="k" domain={['dataMin - 500', 'dataMax + 500']} />
-                      <Tooltip formatter={(v: number) => [`${(v / 1000).toFixed(2).replace('.', ',')} mill. (${Math.round(v).toLocaleString('es-AR')} mil puestos)`, 'Total Registrado']} />
-                      <Line type="monotone" dataKey="Total" stroke="#15803d" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                      <YAxis
+                        tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }}
+                        tickFormatter={(v: number) => `${v.toFixed(2).replace('.', ',')}M`}
+                        domain={['dataMin - 0.2', 'dataMax + 0.2']}
+                      />
+                      <Tooltip
+                        formatter={(v: number) => [
+                          `${v.toFixed(2).replace('.', ',')} millones de puestos`,
+                          'Total Registrado',
+                        ]}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="TotalMillones"
+                        name="Total Registrado"
+                        stroke="#15803d"
+                        strokeWidth={3}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
@@ -405,7 +423,11 @@ export default function EmpleoNacionalPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartDataRegistros} layout="vertical" margin={{ left: 180, right: 30, top: 10, bottom: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-                      <XAxis type="number" tick={{ fontSize: 11 }} />
+                      <XAxis
+                        type="number"
+                        tick={{ fontSize: 11 }}
+                        tickFormatter={(v: number) => `${v.toLocaleString('es-AR')} mil`}
+                      />
                       <YAxis dataKey="tipo" type="category" tick={{ fontSize: 11, fontWeight: 600 }} width={170} />
                       <Tooltip formatter={(v: number) => [`${v.toLocaleString('es-AR')} mil puestos`, 'Cantidad']} />
                       <Bar dataKey="cantidadMil" fill="#14203b" radius={[0, 6, 6, 0]} barSize={18} />
@@ -416,10 +438,13 @@ export default function EmpleoNacionalPage() {
                 {/* 3. GRÁFICO PROVINCIAL */}
                 {activeTab === 'provincias' && (
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartDataProv} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                    <LineChart data={chartDataProv} margin={{ top: 20, right: 30, left: 15, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                       <XAxis dataKey="fechaLabel" tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }} />
-                      <YAxis tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }} unit="k" />
+                      <YAxis
+                        tick={{ fontSize: 12, fontWeight: 600, fill: '#475569' }}
+                        tickFormatter={(v: number) => `${v.toLocaleString('es-AR')} mil`}
+                      />
                       <Tooltip
                         formatter={(val: number, name: string) => [
                           `${val.toLocaleString('es-AR')} mil puestos`,
